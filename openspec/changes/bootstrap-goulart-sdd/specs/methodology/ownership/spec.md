@@ -29,6 +29,13 @@ The Goulart SDD custom schema SHALL live in `openspec/schemas/goulart-sdd/` and 
 - **WHEN** the `goulart-sdd` schema is installed
 - **THEN** the `spec-driven` schema SHALL remain available and unmodified
 
+### Requirement: Adapter entry points
+Goulart-owned adapter entry points (`goulart-plan`, `goulart-apply`, `goulart-review`, `goulart-verify`, `goulart-archive`) SHALL use the `goulart-*` namespace and SHALL delegate to OpenSpec operations without modifying upstream behavior.
+
+#### Scenario: Adapter delegation
+- **WHEN** a Goulart adapter needs OpenSpec to perform an operation
+- **THEN** it SHALL call the OpenSpec operation (e.g., `openspec archive`) without modifying the upstream command or skill
+
 ### Requirement: CI gates are repository-owned
 CI enforcement scripts and workflows SHALL live in `.github/workflows/` or `scripts/gates/` and SHALL NOT depend on OpenSpec internals.
 

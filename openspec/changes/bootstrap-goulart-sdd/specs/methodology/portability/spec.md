@@ -32,6 +32,13 @@ OpenCode SHALL be the first coding-agent integration implemented. The methodolog
 - **WHEN** a user wants to use Goulart SDD with a different coding agent
 - **THEN** they SHALL be able to create a new adapter without modifying the methodology or schema
 
+### Requirement: Adapter entry points
+The OpenCode adapter SHALL implement entry points for: `goulart-plan`, `goulart-review`, `goulart-apply`, `goulart-verify`, `goulart-archive`. Fewer files may implement these concepts cleanly if the design demonstrates that combined entry points are sufficient.
+
+#### Scenario: Adapter covers full lifecycle
+- **WHEN** a user follows the Goulart SDD workflow
+- **THEN** the adapter entry points SHALL cover planning, review, implementation, verification, and archive stages
+
 ### Requirement: Graceful degradation
 When a coding-agent harness does not support a feature (fresh context, cross-model review, automated TDD), the methodology SHALL degrade gracefully with clear documentation of what is lost.
 

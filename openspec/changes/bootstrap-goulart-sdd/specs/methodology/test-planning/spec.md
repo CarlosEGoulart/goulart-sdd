@@ -1,11 +1,11 @@
 ## Purpose
 
-Defines the test-plan artifact that maps specification scenarios to named automated tests and serves as a live coverage ledger.
+Defines the test-plan artifact that maps specification scenarios to validation entries and serves as a behavioral coverage ledger.
 
 ## ADDED Requirements
 
 ### Requirement: Test-plan maps every scenario
-The test-plan SHALL map every `#### Scenario:` in every spec file to at least one named test. No scenario may be left unmapped.
+The test-plan SHALL map every `#### Scenario:` in every spec file to at least one validation entry. No scenario may be left unmapped.
 
 #### Scenario: Complete scenario coverage
 - **WHEN** the test-plan is created
@@ -15,24 +15,37 @@ The test-plan SHALL map every `#### Scenario:` in every spec file to at least on
 - **WHEN** a spec scenario has no corresponding test-plan entry
 - **THEN** downstream tasks SHALL NOT be created until the gap is addressed
 
-### Requirement: Test-plan entries include traceability
-Each test-plan entry SHALL record: the requirement it belongs to, the scenario name, the test file path, and the test function/method name.
+### Requirement: Three validation types
+Each test-plan entry SHALL declare one of three validation types: AUTOMATED, MECHANICAL, or SEMANTIC.
 
-#### Scenario: Traceable entry
-- **WHEN** a developer reads a test-plan entry
-- **THEN** they can identify which spec scenario it covers and where the test lives
+#### Scenario: AUTOMATED entry
+- **WHEN** a scenario can be verified by an automated test (unit, integration, E2E)
+- **THEN** the entry SHALL record test file path and test function/method name
+- **THEN** the validation type SHALL be AUTOMATED
+
+#### Scenario: MECHANICAL entry
+- **WHEN** a scenario can be verified by a tool or command (lint, typecheck, schema validation, build)
+- **THEN** the entry SHALL record the validation command or check
+- **THEN** the validation type SHALL be MECHANICAL
+
+#### Scenario: SEMANTIC entry
+- **WHEN** a scenario cannot reasonably be verified automatically or mechanically
+- **THEN** the entry SHALL justify why automation is unsuitable
+- **THEN** the entry SHALL identify who or what performs the semantic evaluation
+- **THEN** the validation type SHALL be SEMANTIC
 
 ### Requirement: Test-plan as coverage ledger
-The test-plan SHALL track test status: red (failing/not yet implemented) or green (passing). During apply, entries flip from red to green as tests pass.
+The test-plan SHALL track implementation status for visibility. Statuses such as red/green are for tracking purposes and SHALL NOT be described as proof that RED chronologically occurred before GREEN.
 
 #### Scenario: Status tracking during implementation
-- **WHEN** a test implementation makes its test pass
-- **THEN** the corresponding test-plan entry status SHALL be updated from red to green
+- **WHEN** a test implementation passes
+- **THEN** the corresponding test-plan entry status SHALL be updated for visibility
+- **THEN** the methodology SHALL NOT claim this proves TDD chronology
 
-### Requirement: Non-executable change handling
-For changes with no executable test surface (documentation, config), scenarios MAY map to equivalent mechanical validations (linting, schema validation, link checking) instead of code tests.
+### Requirement: Behavioral coverage integrity
+Tests SHALL NOT be removed, weakened, skipped, or replaced in a way that reduces required behavioral coverage without an explicitly justified specification change.
 
-#### Scenario: Mechanical validation mapping
-- **WHEN** a change has no code test surface
-- **THEN** scenarios MAY map to mechanical validation commands
-- **THEN** the test-plan SHALL note the validation command and initial state as non-executable
+#### Scenario: Behavioral coverage preservation
+- **WHEN** tests are modified during implementation
+- **THEN** the test-plan SHALL confirm that required behavioral coverage is retained
+- **THEN** any coverage reduction SHALL require a corresponding spec amendment

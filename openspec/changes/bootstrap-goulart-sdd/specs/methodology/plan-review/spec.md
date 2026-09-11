@@ -1,11 +1,11 @@
 ## Purpose
 
-Defines the pre-implementation adversarial review that gates downstream artifacts and implementation.
+Defines the pre-implementation adversarial review that gates downstream artifacts and implementation, including explicit human acceptance.
 
 ## ADDED Requirements
 
 ### Requirement: Plan review gates implementation
-A plan-review artifact SHALL exist with verdict APPROVE (or APPROVE_WITH_CHANGES with changes applied) before the apply operation may proceed.
+A plan-review artifact SHALL exist with an acceptable verdict and human acceptance before the test-plan, tasks, or apply may proceed.
 
 #### Scenario: Apply blocked without review
 - **WHEN** the apply operation is invoked and plan-review.md does not exist
@@ -14,6 +14,28 @@ A plan-review artifact SHALL exist with verdict APPROVE (or APPROVE_WITH_CHANGES
 #### Scenario: Apply blocked on REVISE
 - **WHEN** the apply operation is invoked and plan-review.md verdict is REVISE
 - **THEN** the workflow SHALL refuse to proceed until artifacts are revised and re-reviewed
+
+#### Scenario: Apply blocked without human acceptance
+- **WHEN** the plan-review verdict is APPROVE but no human decision has been recorded
+- **THEN** the workflow SHALL refuse to proceed until the human records a disposition
+
+### Requirement: Human decision after plan-review
+After the plan-review verdict, the human SHALL record a disposition: ACCEPTED, REVISE, or OVERRIDDEN. Reviewer approval alone is NOT sufficient to proceed.
+
+#### Scenario: Human accepts plan
+- **WHEN** the plan-review verdict is APPROVE
+- **THEN** the human SHALL record STATUS: ACCEPTED with optional reason
+- **THEN** downstream planning may proceed
+
+#### Scenario: Human requests revision
+- **WHEN** the human is unsatisfied with the plan
+- **THEN** the human SHALL record STATUS: REVISE with reason
+- **THEN** artifacts SHALL be revised and re-reviewed
+
+#### Scenario: Human overrides reviewer
+- **WHEN** the plan-review verdict is REVISE but the human chooses to proceed
+- **THEN** the human SHALL record STATUS: OVERRIDDEN with mandatory reason
+- **THEN** downstream planning may proceed
 
 ### Requirement: Fresh context for review
 The plan-reviewer SHOULD use a fresh context where the coding-agent harness supports it. The reviewer SHALL NOT be the same context that authored the proposal, specs, or design.
