@@ -242,8 +242,9 @@ artifacts:
 
       Reference specs for what needs to be built, design for how to build it.
     requires:
-      - specs
+      - test-plan
       - design
+      - plan-review
 
   - id: code-review
     generates: code-review.md
