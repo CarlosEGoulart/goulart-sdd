@@ -254,6 +254,15 @@ artifacts:
     requires:
       - tasks
 
+  - id: verify
+    generates: verify.md
+    description: Final verification gate before archive
+    template: verify.md
+    instruction: |
+      Create the verify artifact. This is a placeholder for the full verify instruction (Task 3.4).
+    requires:
+      - code-review
+
 apply:
   requires: [ tasks ]
   tracks: tasks.md
