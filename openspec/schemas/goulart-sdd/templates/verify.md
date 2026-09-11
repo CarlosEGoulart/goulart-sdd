@@ -125,59 +125,100 @@
 ### Plan Review Staleness
 
 **Reviewed Revision:** _______________
-**Reviewed Artifacts:** proposal, specs, design
+**Reviewed Paths:** proposal, specs, design
 
-**Material Changes After Review:** Yes | No
-**Evidence / Diff Reference:** _______________
+**Changes After Review:** Yes | No
+**Affected Paths:** _______________
+<!-- Paths/artifacts modified after the plan-review verdict -->
 
-**Freshness Result:** FRESH | STALE | OVERRIDDEN
+**Materiality:** MATERIAL | NON_MATERIAL
+<!-- MATERIAL = changes affect requirements, scope, architecture, acceptance criteria, or implementation assumptions -->
+<!-- NON_MATERIAL = corrections that do not change requirements, scope, architecture, acceptance criteria, or implementation assumptions -->
+
+**Materiality Rationale:** _______________
+<!-- Required for both MATERIAL and NON_MATERIAL classifications -->
+
+**Assessment Method:** REVISION_DIFF | SEMANTIC_FALLBACK
+<!-- REVISION_DIFF = repository revision/diff evidence available -->
+<!-- SEMANTIC_FALLBACK = conservative semantic comparison when clean revision cannot represent reviewed working tree -->
+
+**Assessment Evidence:** _______________
+<!-- Diff reference, commit range, or semantic comparison rationale -->
+
+**Freshness Result:** FRESH | STALE
 <!-- FRESH = no material changes detected -->
-<!-- STALE = material changes detected, re-review required -->
-<!-- OVERRIDDEN = material changes exist, explicitly waived with reason -->
+<!-- STALE = material changes detected, re-review required for normal progression -->
+
+**Re-review Required:** Yes | No
+
+**Override Invoked:** Yes | No
+<!-- Override is an exception to the gate; it does NOT change STALE to FRESH -->
+<!-- It records a permitted exception allowing progression despite the stale condition -->
+
+**Condition Waived:** _______________
+<!-- What the override explicitly permits -->
 
 **Override Reason:** _______________
-<!-- Required when Freshness Result = OVERRIDDEN -->
-<!-- Override records an exception, NOT proof of freshness -->
+<!-- Mandatory when override is invoked -->
 
-<!-- Material changes to proposal/specs/design after plan-review make it stale. -->
-<!-- Reviewer-requested material changes still make the prior review stale. -->
-<!-- Non-material corrections may avoid re-review with recorded rationale. -->
+<!-- Material changes to proposal/specs/design after plan-review make it STALE. -->
+<!-- Reviewer-requested material changes are still MATERIAL and still make it STALE. -->
+<!-- NON_MATERIAL corrections may preserve normal progression only with recorded rationale. -->
+<!-- An override does NOT make a stale review fresh. -->
+<!-- An override does NOT imply independent review occurred. -->
+<!-- Filesystem timestamps MUST NOT be freshness evidence. -->
 
 ### Code Review Staleness
 
 **Reviewed Revision:** _______________
-**Reviewed Artifacts:** source, tests, configuration
+**Reviewed Paths:** source, tests, configuration
 
-**Material Changes After Review:** Yes | No
-**Evidence / Diff Reference:** _______________
+**Changes After Review:** Yes | No
+**Affected Paths:** _______________
 
-**Freshness Result:** FRESH | STALE | OVERRIDDEN
+**Materiality:** MATERIAL | NON_MATERIAL
 
-**Override Reason:** _______________
+**Materiality Rationale:** _______________
+
+**Assessment Method:** REVISION_DIFF | SEMANTIC_FALLBACK
+
+**Assessment Evidence:** _______________
+
+**Freshness Result:** FRESH | STALE
+
+**Re-review Required:** Yes | No
 
 **Accepted Finding Caused Material Change:** Yes | No
 <!-- If an accepted finding caused material implementation changes, -->
-<!-- the prior code review is stale regardless of acceptance. -->
+<!-- the prior code review is STALE regardless of acceptance. -->
 
 **Round Limit State:** _______________
 <!-- Record bounded-round escalation state if relevant -->
 
-<!-- Source/test/config changes after code review make it stale. -->
-<!-- Material fixes for accepted findings still make the prior review stale. -->
-<!-- Non-material corrections may avoid re-review with clear justification. -->
+**Override Invoked:** Yes | No
+
+**Condition Waived:** _______________
+
+**Override Reason:** _______________
+
+<!-- Source/test/config changes after code review make it STALE. -->
+<!-- Material fixes for accepted findings still make the prior review STALE. -->
+<!-- NON_MATERIAL corrections may avoid re-review only with clear recorded justification. -->
+<!-- Override does NOT imply freshness. -->
+<!-- Override does NOT imply independent review occurred. -->
 
 ---
 
 ## Review Overrides
 
-| Review | Condition Waived | Override Recorded | Reason | Freshness Still Stale? |
+| Review | Condition Waived | Override Invoked | Reason | Freshness Result |
 |---|---|---|---|---|
 | | | | | |
 
-<!-- Mandatory reason when override is invoked. -->
-<!-- Override may waive the identified condition only when permitted. -->
-<!-- Override does NOT make a stale review fresh. -->
-<!-- Override does NOT imply independent review occurred. -->
+<!-- Freshness Result: FRESH | STALE -->
+<!-- If an override covers a stale review, Freshness Result must remain STALE. -->
+<!-- Override permits only the explicitly allowed exception. -->
+<!-- It does not change freshness classification. -->
 <!-- Override does NOT replace: code-review existence, task completion, -->
 <!-- mandatory triage, or evaluable test-plan entries. -->
 
