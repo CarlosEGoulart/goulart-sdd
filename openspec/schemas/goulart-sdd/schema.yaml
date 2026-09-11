@@ -181,6 +181,17 @@ artifacts:
     requires:
       - proposal
 
+  - id: plan-review
+    generates: plan-review.md
+    description: Pre-implementation plan review and human approval gate
+    template: plan-review.md
+    instruction: |
+      Create the plan review artifact. This is a placeholder for the full plan-review instruction (Task 3.1).
+    requires:
+      - proposal
+      - specs
+      - design
+
   - id: tasks
     generates: tasks.md
     description: Implementation checklist with trackable tasks
