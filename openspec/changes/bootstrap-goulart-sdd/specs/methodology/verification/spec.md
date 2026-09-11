@@ -4,12 +4,26 @@ Defines the final whole-change audit that verifies spec compliance, test integri
 
 ## ADDED Requirements
 
-### Requirement: Verify depends on code-review
-The verify artifact SHALL exist after code-review and before archive. The `goulart-verify` adapter SHALL require code-review to exist before proceeding.
+### Requirement: goulart-verify produces the verify result
+The `goulart-verify` adapter produces/evaluates the verify result. Its flow is:
 
-#### Scenario: Archive blocked without verify
-- **WHEN** the archive operation is invoked and verify.md does not exist
-- **THEN** the workflow SHALL refuse to proceed
+```
+check prerequisites
+  → code-review valid
+  → review triage complete
+  → implementation state ready
+  → perform verification
+  → produce verify artifact
+  → emit DECISION
+```
+
+Then `goulart-archive` consumes that decision. Do NOT describe goulart-verify's prerequisite check as "checking the verify decision" — the verify decision does not exist yet at that point.
+
+#### Scenario: Verify prerequisites
+- **WHEN** goulart-verify is invoked
+- **THEN** it SHALL verify that code-review.md exists and has a verdict
+- **THEN** it SHALL verify that review triage (where findings existed) is complete
+- **THEN** it SHALL proceed to perform verification and produce the verify artifact
 
 #### Scenario: Verify blocked without code-review
 - **WHEN** goulart-verify is invoked and code-review.md does not exist
@@ -37,7 +51,11 @@ The verify SHALL confirm that all test-plan entries are satisfied (AUTOMATED ent
 - **THEN** it SHALL confirm no tests were removed, weakened, or replaced in a way that reduces behavioral coverage without a corresponding spec change
 
 ### Requirement: Verify checks review completeness and staleness
-The verify SHALL confirm that review verdicts are valid and not stale, distinguishing two review lineages.
+The verify SHALL confirm that review verdicts are valid and not stale, distinguishing two review lineages. Staleness detection uses repository revision/diff information where available, falling back to conservative semantic comparison when clean revision cannot represent the reviewed working tree. Filesystem timestamps SHALL NOT be used as reliable staleness evidence (unstable across clone, checkout, rebase, CI, file copy).
+
+Each review artifact SHOULD record what it reviewed:
+- reviewed revision/commit when available
+- reviewed paths/artifacts
 
 #### Scenario: Plan-review staleness
 - **WHEN** verify runs
@@ -48,6 +66,14 @@ The verify SHALL confirm that review verdicts are valid and not stale, distingui
 - **WHEN** verify runs
 - **THEN** it SHALL check that source code, tests, or implementation-relevant configuration were not materially modified after the code-review verdict
 - **THEN** material changes SHALL require a new code-review before verify proceeds
+
+#### Scenario: Revision-based staleness detection
+- **WHEN** Git state is available
+- **THEN** staleness SHOULD be checked using repository revision/diff information as supporting evidence
+
+#### Scenario: Semantic fallback
+- **WHEN** a clean revision cannot represent the reviewed working tree
+- **THEN** staleness SHALL fall back to conservative semantic comparison
 
 ### Requirement: Verify emits structured decision
 The verify SHALL emit exactly one decision: PASS, PASS_WITH_WARNINGS, or FAIL. It SHALL clearly distinguish mechanical checks from semantic evaluations.
@@ -62,9 +88,17 @@ The verify SHALL emit exactly one decision: PASS, PASS_WITH_WARNINGS, or FAIL. I
 - **THEN** the decision SHALL be DECISION: PASS_WITH_WARNINGS
 - **THEN** warnings SHALL be surfaced to the human
 - **THEN** archive MAY proceed only if the human explicitly accepts or defers the warnings
+- **THEN** PASS_WITH_WARNINGS SHALL NOT silently mean PASS
 
 #### Scenario: FAIL
 - **WHEN** blocking issues are found
 - **THEN** the decision SHALL be DECISION: FAIL
 - **THEN** archive SHALL NOT proceed
 - **THEN** human override MUST be explicit and recorded
+
+### Requirement: Verify decision records reviewed state
+The verify artifact SHOULD record the revision/commit and paths reviewed, so that goulart-archive and future audits can assess staleness.
+
+#### Scenario: Review metadata
+- **WHEN** verify produces the verify artifact
+- **THEN** it SHOULD record the reviewed revision/commit (when available) and the reviewed paths/artifacts

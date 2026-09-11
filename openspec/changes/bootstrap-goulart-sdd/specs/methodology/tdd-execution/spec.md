@@ -1,11 +1,46 @@
 ## Purpose
 
-Defines the TDD-oriented apply workflow — fresh implementer context with codebase access, RED-GREEN-REFACTOR progression, and bounded retry loops.
+Defines the TDD-oriented apply workflow — one-task-per-invocation baseline, fresh implementer context with codebase access, RED-GREEN-REFACTOR progression, and bounded retry loops.
 
 ## ADDED Requirements
 
+### Requirement: One task per invocation (portable baseline)
+The apply workflow SHALL implement one focused task per invocation. A subsequent invocation processes the next task. This ensures that a user can start each task in a fresh session even when the harness cannot spawn isolated subagents.
+
+The per-invocation flow is:
+
+```
+select first eligible pending task
+  → load relevant task/spec/design/test-plan context
+  → allow repository exploration as needed
+  → RED → GREEN → REFACTOR
+  → mark that task complete
+  → report result
+  → STOP
+```
+
+If a harness supports true isolated subcontexts, an adapter MAY optimize execution by spawning one fresh subcontext per task. But the portable/default behavioral contract is one task per invocation. `goulart-apply` SHALL NOT run the entire task list in one accumulated conversational context by default.
+
+#### Scenario: Single task execution
+- **WHEN** the user invokes `goulart-apply`
+- **THEN** the adapter SHALL select the first eligible pending task
+- **THEN** the adapter SHALL execute that task using TDD
+- **THEN** the adapter SHALL mark that task complete and report the result
+- **THEN** the adapter SHALL STOP
+
+#### Scenario: Subsequent task invocation
+- **WHEN** the user invokes `goulart-apply` again after a task completes
+- **THEN** the adapter SHALL select the next eligible pending task
+- **THEN** the adapter SHALL execute that task
+- **THEN** the adapter SHALL STOP
+
+#### Scenario: All tasks complete
+- **WHEN** `goulart-apply` is invoked and all tasks are complete
+- **THEN** the adapter SHALL report completion
+- **THEN** the adapter SHALL instruct the user to run `goulart-review code` in a fresh session
+
 ### Requirement: One task at a time with codebase access
-The apply workflow SHALL implement one focused task at a time. The implementer SHALL receive minimal conversational/history context but SHALL be allowed to inspect all repository files necessary to implement the task correctly.
+The implementer SHALL receive minimal conversational/history context but SHALL be allowed to inspect all repository files necessary to implement the task correctly.
 
 #### Scenario: Focused task with codebase access
 - **WHEN** the implementer starts a task

@@ -15,12 +15,23 @@ Files under `.opencode/commands/opsx-*` and `.opencode/skills/openspec-*` SHALL 
 - **WHEN** OpenSpec regenerates its skills or commands
 - **THEN** Goulart SDD files under the `goulart-*` namespace SHALL NOT be affected
 
-### Requirement: Goulart namespace isolation
-All Goulart SDD-owned files SHALL use the `goulart-*` namespace prefix, including commands, skills, schemas, and scripts.
+### Requirement: Namespace isolation for collision-prone identifiers
+Namespace isolation applies primarily to collision-prone integration identifiers:
 
-#### Scenario: Namespace separation
-- **WHEN** a new Goulart SDD command, skill, or script is created
+- Commands: `goulart-*`
+- Skills: `goulart-*`
+- Schema id/path: `goulart-sdd`
+- Goulart-specific executable scripts where applicable
+
+Normal project documentation (e.g., `docs/methodology.md`, `docs/getting-started.md`) MAY use standard naming without the `goulart-` prefix.
+
+#### Scenario: Namespace separation for integration points
+- **WHEN** a new Goulart SDD command, skill, or schema is created
 - **THEN** it SHALL use the `goulart-` prefix and SHALL NOT collide with OpenSpec-generated names
+
+#### Scenario: Documentation uses standard naming
+- **WHEN** methodology documentation is created under `docs/`
+- **THEN** it MAY use standard naming (e.g., `methodology.md`) without requiring the `goulart-` prefix
 
 ### Requirement: Schema ownership
 The Goulart SDD custom schema SHALL live in `openspec/schemas/goulart-sdd/` and SHALL NOT modify the upstream `spec-driven` schema.
