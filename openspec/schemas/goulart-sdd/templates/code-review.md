@@ -116,6 +116,10 @@
 
 **Requires Implementation Change:** Yes | No
 
+**Blocking Condition:** Yes | No
+<!-- Yes = normal progression remains blocked until the condition is resolved -->
+<!-- or an explicitly permitted override records the waived condition and reason -->
+
 ---
 
 ### Finding: F-002
@@ -131,16 +135,18 @@
 
 **Requires Implementation Change:** Yes | No
 
+**Blocking Condition:** Yes | No
+
 ---
 
 <!-- Add additional findings as needed. Use F-003, F-004, etc. -->
 
 **Finding Summary:**
 
-| ID | Severity | Category | Requires Change | Triage |
-|---|---|---|---|---|
-| F-001 | | | | Pending |
-| F-002 | | | | Pending |
+| ID | Severity | Category | Requires Change | Blocking | Triage |
+|---|---|---|---|---|---|
+| F-001 | | | | | Pending |
+| F-002 | | | | | Pending |
 
 <!-- Triage: Pending | ACCEPT | REJECT | DEFER -->
 
@@ -185,8 +191,12 @@
 
 <!-- Rules: -->
 <!-- ACCEPT: finding accepted; if it requires a change, that change must be addressed before verify -->
-<!-- REJECT: justification REQUIRED; does not override unresolved blocking/Critical conditions -->
-<!-- DEFER: justification REQUIRED; does not override unresolved blocking/Critical conditions -->
+<!-- ACCEPT does not by itself resolve a blocking condition -->
+<!-- REJECT: justification REQUIRED; does not implicitly waive a blocking condition -->
+<!-- DEFER: justification REQUIRED; does not implicitly waive a blocking condition -->
+<!-- Unresolved blocking conditions prevent normal progression -->
+<!-- Unresolved Critical findings are also blocking and force VERDICT: REVISE -->
+<!-- An explicit override, when permitted, must use the Explicit Human Override section -->
 
 ---
 
@@ -321,6 +331,8 @@
 <!-- Why escalation is needed: unresolved blocking conditions, required changes, or round limit reached -->
 
 **Unresolved Conditions:**
-<!-- Concise summary for human escalation -->
+<!-- Concise summary for human escalation, e.g.: -->
+<!-- - F-003 — Blocking Condition: Yes -->
+<!-- - F-004 — Critical -->
 <!-- The workflow MUST NOT start a third round automatically -->
 <!-- The limit includes re-reviews after APPROVE_WITH_CHANGES or other material implementation changes -->
