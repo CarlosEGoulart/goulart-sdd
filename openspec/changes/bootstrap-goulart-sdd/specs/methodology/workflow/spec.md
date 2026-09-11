@@ -7,20 +7,21 @@ Defines the strict Goulart SDD workflow lifecycle — the ordered sequence of ar
 ### Requirement: Goulart-compliant vs raw OpenSpec execution
 Goulart SDD extends OpenSpec; it does not disable or replace upstream OpenSpec commands.
 
-- **Goulart-compliant execution** uses `goulart-*` lifecycle entry points (goulart-plan, goulart-review, goulart-apply, goulart-verify, goulart-archive) and satisfies all Goulart SDD process guarantees.
+- **Goulart-compliant execution** uses `goulart-*` lifecycle entry points (goulart-plan, goulart-review, goulart-apply, goulart-verify, goulart-archive) and honors their gates and recorded human dispositions. Disclosed degraded review or explicit overrides SHALL NOT be represented as providing the guarantees they waive.
 - **Raw OpenSpec execution** (direct use of `/opsx-propose`, `/opsx-apply`, `/opsx-archive`, `openspec ...`) remains available as an escape hatch. Raw execution MAY bypass Goulart execution gates. Raw execution SHALL NOT be represented as satisfying all Goulart SDD process guarantees.
 
 Do NOT attempt to modify or disable upstream OpenSpec commands.
 
 #### Scenario: Goulart-compliant plan
 - **WHEN** a user runs `goulart-plan`
-- **THEN** the adapter SHALL enforce planning sequencing (proposal, specs, design, stop for review)
-- **THEN** the result SHALL satisfy Goulart SDD plan-phase guarantees
+- **THEN** the adapter SHALL enforce planning sequencing (proposal, specs, design, stop for review, resume after acceptance)
+- **THEN** the adapter SHALL report the planning state and any acknowledged limitations or overrides accurately
 
 #### Scenario: Raw plan escape hatch
 - **WHEN** a user runs `/opsx-propose` directly
-- **THEN** OpenSpec SHALL create the proposal artifact
-- **THEN** the result SHALL NOT be represented as satisfying Goulart SDD plan-phase guarantees (no enforced stop, no independent review requirement)
+- **THEN** OpenSpec MAY generate the entire planning artifact set required by the selected schema
+- **THEN** it MAY therefore bypass Goulart sequencing, independent-review handoff, or human gates
+- **THEN** the result SHALL NOT be represented as Goulart-compliant planning
 
 ### Requirement: Strict workflow sequence
 Goulart SDD SHALL enforce the following conceptual sequence for changes using the `goulart-sdd` schema: proposal, specs, design, plan-review, human decision, test-plan, tasks, apply, code-review, verify, archive. Not every box is an OpenSpec artifact — some are operations, adapter commands, or human decisions.
@@ -49,10 +50,10 @@ The workflow SHALL distinguish artifact gates (OpenSpec dependency graph), execu
 - **THEN** it SHALL verify structural invariants (required artifacts exist, verdicts are present) without claiming to prove agent cognition
 
 ### Requirement: Bounded review iteration
-The workflow SHALL enforce a maximum of 2 review-revision rounds per review stage (plan-review and code-review independently).
+The workflow SHALL enforce a maximum of 2 review-revision rounds per review stage (plan-review and code-review independently), including re-reviews following APPROVE_WITH_CHANGES or material post-review changes. Reaching the limit SHALL NOT automatically start a third round or reset round history.
 
 #### Scenario: Review escalation after two rounds
-- **WHEN** a review stage reaches its second REVISE verdict
+- **WHEN** round 2 leaves REVISE, unresolved blocking/required changes, or a material change requiring another review
 - **THEN** the workflow SHALL STOP and escalate to the human with a clear summary of unresolved issues
 
 ### Requirement: Human override authority
@@ -62,13 +63,43 @@ The human SHALL retain final authority to approve, reject, defer, or override an
 - **WHEN** the human disagrees with a reviewer's REVISE verdict
 - **THEN** the human MAY instruct the workflow to proceed despite the verdict, and the decision SHALL be recorded with a reason
 
-### Requirement: Goulart-plan sequencing
-The `goulart-plan` adapter entry point SHALL orchestrate the planning phase: creating proposal, specs, and design, then stopping. It SHALL NOT automatically proceed to test-plan or tasks without an acceptable plan-review verdict and human acceptance.
+### Requirement: State-aware goulart-plan sequencing
+The `goulart-plan` adapter entry point SHALL be state-aware. Its behavior depends on the current state of the change:
 
-#### Scenario: goulart-plan stops after design
-- **WHEN** goulart-plan creates the design artifact
+**Invocation while initial planning is incomplete** (proposal/specs/design not yet fully created):
+- Create/continue proposal, specs, and design.
+- STOP.
+- Instruct user to run `goulart-review plan` in a fresh session.
+
+**Later invocation when the plan-review gate permits continuation** (proposal/specs/design exist, plan-review and human disposition satisfy the plan-review verdict and staleness rules, including any explicitly recorded override):
+- Create/continue test-plan.
+- Create/continue tasks.
+- Report planning complete.
+- STOP.
+- Instruct user that `goulart-apply` is the next Goulart-compliant execution step.
+
+An already-complete planning state SHALL be reported without recreating completed artifacts. Initial planning SHALL stop after design even if it began in the same invocation; downstream planning requires a later invocation. A permitted degraded review still requires its disclosure and human acknowledgement and SHALL NOT be called independent.
+
+**Invocation when a gate is unresolved** (plan-review missing, verdict pending, human disposition not recorded, or disposition blocks continuation):
+- STOP.
+- Report exactly what gate is unresolved.
+
+Do NOT create `goulart-continue` or another lifecycle command unless a concrete technical limitation requires it. The public command surface SHALL remain minimal.
+
+#### Scenario: Initial planning invocation
+- **WHEN** goulart-plan is invoked and proposal/specs/design do not yet fully exist
+- **THEN** the adapter SHALL create/continue proposal, specs, and design
 - **THEN** it SHALL stop and instruct the user to run `goulart-review plan` in a fresh session
-- **THEN** it SHALL NOT create test-plan or tasks until plan-review and human decision are complete
+
+#### Scenario: Resume after accepted plan-review
+- **WHEN** goulart-plan is invoked later and proposal/specs/design exist, the plan-review gate is satisfied under its verdict/staleness rules, and human disposition permits continuation
+- **THEN** the adapter SHALL create/continue test-plan and tasks
+- **THEN** it SHALL report planning complete
+- **THEN** it SHALL stop and instruct the user that `goulart-apply` is the next step
+
+#### Scenario: Gate unresolved
+- **WHEN** goulart-plan is invoked and a required gate is unresolved (plan-review missing, verdict pending, or human disposition blocks)
+- **THEN** the adapter SHALL stop and report exactly what gate is unresolved
 
 ### Requirement: Handoff to independent reviews
 `goulart-plan` and `goulart-apply` MUST NOT perform their independent reviews inside their own author/implementer context. The normal handoff is:
@@ -78,10 +109,10 @@ goulart-plan → STOP → instruct user to run goulart-review plan in a fresh se
 goulart-apply (last task complete) → STOP → instruct user to run goulart-review code in a fresh session
 ```
 
-If the harness can spawn a provably isolated review context, an adapter MAY automate that handoff. This capability SHALL NOT be assumed in the generic methodology.
+If the harness can supply a separate/fresh context for review, an adapter MAY automate that handoff. This capability SHALL NOT be assumed in the generic methodology.
 
 #### Scenario: Plan handoff
-- **WHEN** goulart-plan completes proposal, specs, and design
+- **WHEN** goulart-plan completes the initial proposal/specs/design phase
 - **THEN** it SHALL stop and instruct the user to run `goulart-review plan` in a fresh session
 
 #### Scenario: Code-review handoff

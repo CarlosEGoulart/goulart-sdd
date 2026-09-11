@@ -19,11 +19,11 @@ The methodology SHOULD support an architecture where planning and review use str
 - **THEN** the methodology SHALL NOT require all roles to use the same model
 
 ### Requirement: Fresh-context independence prioritized over cross-model
-Fresh-context independence SHALL be prioritized over cross-model review. Cross-model review MAY be recommended but SHALL NOT be mandatory. The fallback hierarchy for achieving reviewer independence is:
+Fresh-context independence SHALL be prioritized over cross-model review. Independent review SHALL use a context/session separate from the author/implementer context. Cross-model review MAY be recommended but SHALL NOT be mandatory. The review fallback hierarchy is:
 
-1. Harness-created fresh context (preferred)
-2. User-managed fresh session (fallback)
-3. Degraded review mode (last resort — explicitly disclosed, human-acknowledged, NOT described as independent)
+1. Separate/fresh context supplied by the harness (preferred)
+2. User-managed separate clean session (fallback; still independent)
+3. Degraded review mode, only when both separate-context options are unavailable (last resort — explicitly disclosed, human-acknowledged, NOT described as independent)
 
 #### Scenario: Same-model fresh context
 - **WHEN** only one model is available
@@ -33,6 +33,7 @@ Fresh-context independence SHALL be prioritized over cross-model review. Cross-m
 - **WHEN** reviewer independence cannot be achieved
 - **THEN** the limitation SHALL be explicitly disclosed in the review artifact
 - **THEN** the human SHALL acknowledge the degraded independence
+- **THEN** the result SHALL NOT be described as independent review
 
 ### Requirement: OpenCode as first reference adapter
 OpenCode SHALL be the first coding-agent integration implemented. The methodology SHALL NOT be OpenCode-specific; the schema and methodology docs SHALL be agent-agnostic.
@@ -52,7 +53,7 @@ The OpenCode adapter SHALL implement entry points for: `goulart-plan`, `goulart-
 When a coding-agent harness does not support a feature (fresh context, cross-model review, automated TDD), the methodology SHALL degrade gracefully with clear documentation of what is lost. The degradation MUST be explicitly disclosed and the human MUST acknowledge it.
 
 #### Scenario: Missing harness feature
-- **WHEN** the coding-agent harness cannot spawn fresh contexts
+- **WHEN** the coding-agent harness cannot supply fresh contexts
 - **THEN** the methodology SHALL still function
-- **THEN** the limitation SHALL be documented
-- **THEN** the human SHALL acknowledge the degraded independence
+- **THEN** the adapter SHALL first instruct the user to start a separate clean session
+- **THEN** only if that is unavailable MAY degraded review proceed with documented limitation and human acknowledgement

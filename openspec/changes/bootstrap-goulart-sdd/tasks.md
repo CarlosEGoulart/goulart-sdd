@@ -11,8 +11,8 @@
 
 ## 2. Schema Templates
 
-- [ ] 2.1 Create `openspec/schemas/goulart-sdd/templates/plan-review.md` with sections for: Review Metadata, Round, Reviewed Inputs, Findings (severity + category), Verdict, Required Changes, Human Decision, Human Reason, and verify the file exists
-- [ ] 2.2 Create `openspec/schemas/goulart-sdd/templates/code-review.md` with sections for: Review Metadata, Round, Reviewed Implementation, Findings (severity + category), Verdict, Per-Finding Human Triage (ACCEPT/REJECT/DEFER), Required Changes, and verify the file exists
+- [ ] 2.1 Create `openspec/schemas/goulart-sdd/templates/plan-review.md` with Review Metadata (including degraded disclosure/acknowledgement), ROUND: 1 | 2 and previous outcome, Reviewed Inputs (revision/paths), Findings (severity + category), Verdict, Required Changes with materiality rationale, Human Decision and Human Reason (including explicit overrides); verify the template supports each plan-review verdict/disposition transition
+- [ ] 2.2 Create `openspec/schemas/goulart-sdd/templates/code-review.md` with Review Metadata (including degraded disclosure/acknowledgement), ROUND: 1 | 2 and previous outcome, Reviewed Implementation (revision/paths), Findings (severity + category), Verdict, Per-Finding Human Triage (ACCEPT/REJECT/DEFER), Required Changes with materiality justification, and any explicit override/reason; verify it supports each code-review transition without requiring approval for a clean review
 - [ ] 2.3 Create `openspec/schemas/goulart-sdd/templates/test-plan.md` with table format for: Requirement, Scenario, Validation Type (AUTOMATED/MECHANICAL/SEMANTIC), Test File/Command, Test Name, Status, and verify the file exists
 - [ ] 2.4 Create `openspec/schemas/goulart-sdd/templates/verify.md` with sections for: Prerequisites Checked, Reviewed Revision, Reviewed Paths, Task Completion, Test Integrity, Review Staleness (plan-review and code-review), Scope Drift, Decision (PASS/PASS_WITH_WARNINGS/FAIL), and verify the file exists
 - [ ] 2.5 Modify `openspec/schemas/goulart-sdd/templates/tasks.md` to include TDD ordering instructions (write failing test, implement to pass, refactor) and verify the file exists
@@ -20,21 +20,21 @@
 
 ## 3. Schema Instructions
 
-- [ ] 3.1 Write the `plan-review` instruction in `schema.yaml` — fresh-context fallback hierarchy (harness → user-managed → degraded mode), adversarial attack surface, VERDICT format with complete transition matrix (APPROVE/APPROVE_WITH_CHANGES/REVISE), severity rules, bounded rounds, round persistence (ROUND: 1 | 2), human decision section, read-only posture, and verify the instruction field is populated
+- [ ] 3.1 Write the `plan-review` instruction in `schema.yaml` — independent versus degraded review, fallback hierarchy, adversarial attack surface, complete verdict/disposition matrix, applied Required Changes with material re-review versus justified non-material acceptance, explicit OVERRIDDEN/reason, severity rules, two-round persistence/escalation including APPROVE_WITH_CHANGES, and read-only posture; verify instructions match the plan-review spec scenarios
 - [ ] 3.2 Write the `test-plan` instruction in `schema.yaml` — three validation types (AUTOMATED/MECHANICAL/SEMANTIC), scenario-to-validation mapping, coverage ledger format, behavioral integrity rule, and verify the instruction field is populated
-- [ ] 3.3 Write the `code-review` instruction in `schema.yaml` — fresh-context fallback hierarchy, implementation evaluation scope, VERDICT format, human triage only when findings exist, round persistence, and verify the instruction field is populated
-- [ ] 3.4 Write the `verify` instruction in `schema.yaml` — prerequisite check (code-review exists, triage complete), spec compliance check, test integrity check, review staleness (two lineages, revision-based detection, timestamp exclusion), DECISION format, PASS_WITH_WARNINGS semantics, review metadata (revision/paths), and verify the instruction field is populated
+- [ ] 3.3 Write the `code-review` instruction in `schema.yaml` — independent/degraded fallback, evaluation scope, full APPROVE/APPROVE_WITH_CHANGES/REVISE transitions, finding triage with justified REJECT/DEFER, material-fix staleness and justified non-material exception, explicit override/reason, and two-round persistence/escalation; verify each transition against the code-review spec
+- [ ] 3.4 Write the `verify` instruction in `schema.yaml` — independently check code-review existence/permitted verdict, complete mandatory triage, all tasks complete, final evaluable test-plan entries, review freshness and any permitted explicit override; then audit compliance, tests, and both staleness lineages using revision/diff plus semantic judgment (no timestamps), and emit DECISION with warning semantics and reviewed metadata; verify incomplete prerequisites block and overrides do not imply freshness
 - [ ] 3.5 Update the `tasks` instruction in `schema.yaml` to enforce TDD ordering per scenario and verify the instruction field is updated
 - [ ] 3.6 Run `openspec schema validate goulart-sdd --verbose` and confirm all artifacts and instructions are valid
 
 ## 4. goulart-plan Adapter
 
-- [ ] 4.1 Create `.opencode/skills/goulart-plan/SKILL.md` with instructions for orchestrating proposal, specs, and design creation, then stopping and instructing the user to run `goulart-review plan` in a fresh session, and verify the file exists
+- [ ] 4.1 Create `.opencode/skills/goulart-plan/SKILL.md` with state-aware initial planning (proposal/specs/design → STOP → fresh-session plan review), later continuation through test-plan/tasks only when verdict/staleness/human gates permit it, exact unresolved-gate reporting, and planning-complete → STOP → goulart-apply guidance; verify all workflow state transitions are covered without another command
 - [ ] 4.2 Create `.opencode/commands/goulart-plan.md` command file that invokes the goulart-plan skill and verify the file exists
 
 ## 5. goulart-review Adapter
 
-- [ ] 5.1 Create `.opencode/skills/goulart-review/SKILL.md` with instructions for fresh-context adversarial review (with fallback hierarchy disclosure), finding format (severity + category), VERDICT handling with complete transition matrix, human decision section, round persistence (ROUND: 1 | 2), degraded-mode disclosure and human acknowledgement, and verify the file exists
+- [ ] 5.1 Create `.opencode/skills/goulart-review/SKILL.md` for plan/code reviews using their separate artifact contracts, independent-context versus disclosed/acknowledged degraded fallback, severity/category findings, stage-specific verdict transitions, human plan disposition versus conditional code triage, materiality/staleness, explicit overrides, and bounded round persistence; verify behavior matches both review specs
 - [ ] 5.2 Create `.opencode/commands/goulart-review.md` command file that invokes the goulart-review skill and verify the file exists
 
 ## 6. goulart-apply Adapter
@@ -44,7 +44,7 @@
 
 ## 7. goulart-verify Adapter
 
-- [ ] 7.1 Create `.opencode/skills/goulart-verify/SKILL.md` with instructions for: prerequisite check (code-review exists, triage complete — NOT "checking verify decision"), spec compliance check, test integrity check (three validation types), review staleness (two lineages, revision-based detection, timestamp exclusion), DECISION format (PASS/PASS_WITH_WARNINGS/FAIL), review metadata (revision/paths), and verify the file exists
+- [ ] 7.1 Create `.opencode/skills/goulart-verify/SKILL.md` that independently blocks on missing/non-permitting code-review, incomplete mandatory triage, incomplete tasks, unevaluable test-plan entries, or unresolved stale-review gates; assess recorded review exceptions without claiming freshness, then audit spec compliance, all three validation types, and two-lineage staleness (including accepted-finding fixes) and produce DECISION/reviewed metadata; verify prerequisite-blocking and result-production scenarios match the verification spec
 - [ ] 7.2 Create `.opencode/commands/goulart-verify.md` command file that invokes the goulart-verify skill and verify the file exists
 
 ## 8. goulart-archive Adapter
@@ -59,15 +59,18 @@
 
 ## 10. Methodology Documentation
 
-- [ ] 10.1 Create `docs/methodology.md` explaining the Goulart SDD workflow, lifecycle diagram, role model, gate categories (artifact/execution/repository/human), Goulart-compliant vs raw execution distinction, TDD approach, one-task-per-invocation apply, review process with fallback hierarchy, adapter entry points, and verify the file exists
-- [ ] 10.2 Create `docs/getting-started.md` with installation steps, quick-start workflow, first-change walkthrough, and notes on Goulart-compliant vs raw execution, and verify the file exists
+- [ ] 10.1 Create `docs/methodology.md` explaining the workflow, roles, gates, state-aware planning continuation, raw OpenSpec full-planning escape hatch, one-task-per-invocation TDD, independent/degraded review, verdict/disposition and two-round staleness rules, and verification prerequisites; verify documentation agrees with the lifecycle contracts and deferred scope
+- [ ] 10.2 Create `docs/getting-started.md` with installation steps and a first-change walkthrough covering initial goulart-plan → review/human disposition → later goulart-plan → goulart-apply guidance, plus Goulart-compliant versus raw execution; verify the walkthrough includes both planning stops
 
 ## 11. Dogfooding Verification
 
+These are lightweight adapter/schema smoke checks; documented manual evaluation is acceptable where automation is impractical. No complete fake application is required. Validate populated planning artifacts rather than treating a newly created empty change as a valid completed plan.
+
 - [ ] 11.1 Create a test change using the `goulart-sdd` schema (`openspec new change "dogfood-test" --schema goulart-sdd`) and verify the change directory is created with the correct schema
 - [ ] 11.2 Verify that the test change's `.openspec.yaml` references the `goulart-sdd` schema and that `openspec status` shows all expected artifacts (proposal, specs, design, plan-review, test-plan, tasks, code-review, verify)
-- [ ] 11.3 Run `openspec validate` on the test change and confirm no errors
-- [ ] 11.4 Smoke test planning gate: run `goulart-plan` on the test change, verify it creates proposal/specs/design and stops before plan-review/test-plan/tasks
-- [ ] 11.5 Smoke test apply gate: on a temporary change without valid plan-review/human acceptance, verify `goulart-apply` refuses implementation
-- [ ] 11.6 Smoke test archive gate: on a temporary change without valid verify state, verify `goulart-archive` refuses archive delegation
-- [ ] 11.7 Clean up temporary dogfood change directories after verification
+- [ ] 11.3 Smoke test planning gate: run `goulart-plan` on the test change, verify it creates proposal/specs/design and stops before plan-review/test-plan/tasks
+- [ ] 11.4 Smoke test apply gate: on a temporary change without valid plan-review/human acceptance, verify `goulart-apply` refuses implementation
+- [ ] 11.5 Smoke test archive gate: on a temporary change without valid verify state, verify `goulart-archive` refuses archive delegation
+- [ ] 11.6 Smoke test planning continuation: prepare a valid plan-review with permitted human acceptance after the initial planning stop; invoke goulart-plan again and verify it creates/continues test-plan and tasks, reports planning complete, STOPs, and identifies goulart-apply as the next step without executing it
+- [ ] 11.7 After planning smoke checks populate the test change, run `openspec validate dogfood-test` and confirm no blocking errors, recording any warnings
+- [ ] 11.8 Clean up temporary dogfood change directories after verification

@@ -54,14 +54,19 @@ AUTHOR / goulart-plan
     HUMAN DECISION
     STATUS: ACCEPTED | REVISE | OVERRIDDEN
         |
-    accepted?
+    gate permits continuation?
      /     \
    no       yes
     |        |
   revise     v
+          later goulart-plan invocation
+              |
           test-plan (OpenSpec artifact)
               |
              tasks (OpenSpec artifact)
+              |
+          report planning complete → STOP
+          next Goulart-compliant step: goulart-apply
               |
               v
          goulart-apply (adapter command)
@@ -86,10 +91,14 @@ AUTHOR / goulart-plan
               v
          HUMAN TRIAGE (where findings exist; not required when no findings)
          ACCEPT | REJECT | DEFER per finding
+         required material fixes → stale review → re-review
+         round limit reached → STOP / human escalation
               |
               v
            goulart-verify (adapter command)
-         check prerequisites → code-review valid, triage complete
+         check prerequisites → verdict permits, triage complete
+         all tasks complete, test-plan entries evaluable
+         review freshness assessed, permitted overrides recorded
          perform verification
          produce verify artifact
          DECISION: PASS | PASS_WITH_WARNINGS | FAIL
@@ -123,7 +132,7 @@ OpenCode adapter (goulart-* skills/commands)
 
 ## Goulart Compliance Boundary
 
-Goulart-compliant execution uses `goulart-*` lifecycle entry points and satisfies all Goulart SDD process guarantees. Raw OpenSpec execution remains available as an escape hatch but MAY bypass Goulart execution gates.
+Goulart-compliant execution uses `goulart-*` lifecycle entry points and honors their gates and human dispositions. Degraded reviews and overrides must retain their disclosed limitations; they do not supply the guarantees they waive. Raw OpenSpec execution remains available as an escape hatch but MAY bypass Goulart execution gates. In OpenSpec 1.13, raw `/opsx-propose` creates a change and may generate its entire schema-required planning set, bypassing Goulart sequencing, review handoff, or human gates. That result SHALL NOT be represented as Goulart-compliant planning.
 
 This is documented honestly in the methodology. We do not attempt to modify or disable upstream OpenSpec commands.
 
@@ -141,9 +150,9 @@ Provided by OpenSpec's schema/dependency graph (`requires:` field).
 
 Provided by Goulart adapter commands and skills.
 
-- `goulart-plan`: stops after design, instructs user to run `goulart-review plan` in fresh session.
+- `goulart-plan`: state-aware initial planning and later continuation through test-plan/tasks, with the plan-review and human-disposition gate between them (D3).
 - `goulart-apply`: one task per invocation, checks pre-implementation gates (plan-review verdict, human acceptance, test-plan existence), executes TDD, instructs user to run `goulart-review code` when all tasks complete.
-- `goulart-verify`: checks prerequisites (code-review exists, triage complete), performs verification, produces verify artifact with DECISION.
+- `goulart-verify`: independently checks implementation-completeness and review prerequisites (D7), performs verification, produces verify artifact with DECISION.
 - `goulart-archive`: checks verify decision, delegates to OpenSpec archive (PASS), requires human warning dispositions (PASS_WITH_WARNINGS), blocks on FAIL (human override explicit with reason).
 - These are not necessarily provable from Git history.
 
@@ -158,7 +167,7 @@ Provided by scripts, tests, CI.
 
 Explicitly NOT a mechanical gate. The human retains final authority to accept, reject, defer, or override at any point.
 
-- **plan-review**: explicit human acceptance (ACCEPTED/REVISE/OVERRIDDEN) is mandatory.
+- **plan-review**: explicit human disposition (ACCEPTED/REVISE/OVERRIDDEN) is mandatory; only the verdict/disposition combinations in D5 permit progression.
 - **code-review**: human triage is mandatory only when findings exist.
 - **verify**: human warning dispositions required for PASS_WITH_WARNINGS; explicit override required for FAIL.
 
@@ -196,10 +205,10 @@ Key distinction: `requires:` proves artifact existence/order but does NOT prove 
 
 **Decision:** Create Goulart-owned adapter entry points that enforce methodology sequencing:
 
-- `goulart-plan`: orchestrates proposal/specs/design, then stops and instructs user to run `goulart-review plan` in a fresh session.
-- `goulart-review`: invokes fresh-context review for both plan-review and code-review stages. Supports degraded mode with explicit disclosure.
+- `goulart-plan`: while initial planning is incomplete, creates/continues proposal/specs/design, then STOPs and instructs the user to run `goulart-review plan` in a fresh session. On a later invocation, checks the review verdict, freshness, human disposition, and any permitted override. If the gate permits continuation, creates/continues test-plan then tasks, reports planning complete, STOPs, and identifies `goulart-apply` as the next Goulart-compliant step. Otherwise it STOPs and identifies each unresolved gate. Already-complete artifacts are retained. This uses the same command; no additional lifecycle entry point is needed.
+- `goulart-review`: supports plan/code stages using the separate-context hierarchy in D17, with explicitly disclosed and human-acknowledged degraded mode only as a last resort. Author/implementer adapters stop for review handoff; automation may supply a separate/fresh review context but cannot prove cognitive isolation.
 - `goulart-apply`: one task per invocation. Checks pre-implementation gates, executes TDD, marks task complete, stops. Instructs user to run `goulart-review code` when all tasks complete.
-- `goulart-verify`: checks prerequisites (code-review exists, triage complete), performs verification, produces verify artifact with DECISION.
+- `goulart-verify`: independently checks all prerequisites in D7, performs verification, produces verify artifact with DECISION. It consumes code-review state and produces the verify decision; `goulart-archive` consumes that decision.
 - `goulart-archive`: checks verify decision. PASS → delegate to OpenSpec archive. PASS_WITH_WARNINGS → require human warning dispositions. FAIL → block archive.
 
 **Rationale:** OpenSpec owns artifact creation mechanics; Goulart adapters own methodology sequencing. This is an execution/workflow guarantee, not a new OpenSpec engine feature.
@@ -212,14 +221,24 @@ Key distinction: `requires:` proves artifact existence/order but does NOT prove 
 
 **Decision:** Two separate review templates: `templates/plan-review.md` and `templates/code-review.md`, reflecting structurally different artifacts. One Reviewer role, two artifact contracts.
 
-- `plan-review.md`: Review Metadata, Round, Reviewed Inputs, Findings, Verdict, Required Changes, Human Decision, Human Reason.
-- `code-review.md`: Review Metadata, Round, Reviewed Implementation, Findings, Verdict, Per-Finding Human Triage, Required Changes.
+- `plan-review.md`: Review Metadata, Round and previous outcome, Reviewed Inputs (revision/paths where available), Findings, Verdict, Required Changes with materiality classification/rationale, Human Decision, Human Reason including any explicit override.
+- `code-review.md`: Review Metadata, Round and previous outcome, Reviewed Implementation (revision/paths where available), Findings, Verdict, Per-Finding Human Triage, Required Changes with materiality justification and any explicit override/reason. Both contracts record degraded-review disclosure/acknowledgement where applicable.
 
 **Rationale:** A single generic template is insufficient for two structurally different review stages with different human interaction patterns.
 
 ### D5: Human decision after plan-review
 
-**Decision:** After plan-review, the human records a disposition: ACCEPTED, REVISE, or OVERRIDDEN. Reviewer approval alone is NOT sufficient to proceed. APPROVE_WITH_CHANGES requires either re-review after material changes or explicit OVERRIDDEN with reason.
+**Decision:** After plan-review, the human records a disposition: ACCEPTED, REVISE, or OVERRIDDEN. Reviewer approval alone is NOT sufficient to proceed.
+
+| Verdict/state | Permitted continuation |
+| --- | --- |
+| APPROVE | Human STATUS: ACCEPTED permits downstream planning, provided the review is current. |
+| APPROVE_WITH_CHANGES, unapplied Required Changes | Block; ACCEPTED cannot waive unapplied changes. |
+| APPROVE_WITH_CHANGES, material corrections applied | Re-review required for normal progression, or explicit STATUS: OVERRIDDEN with mandatory reason identifying the waived re-review. |
+| APPROVE_WITH_CHANGES, demonstrably non-material corrections applied | Human MAY record ACCEPTED without re-review only with materiality rationale in the review artifact. |
+| REVISE or human STATUS: REVISE | Normally revise and re-review; an explicit STATUS: OVERRIDDEN with mandatory reason may permit progression. |
+
+Non-material corrections do not change requirements, scope, architecture, acceptance criteria, or implementation assumptions. An override records an exception; it does not make a stale review fresh. Required re-reviews count toward the two-round limit in D18.
 
 **Rationale:** This ensures the human remains the final gate. An override MUST include a reason for traceability.
 
@@ -235,9 +254,18 @@ Key distinction: `requires:` proves artifact existence/order but does NOT prove 
 
 ### D7: Verify depends on code-review
 
-**Decision:** `verify` requires `code-review` in the artifact graph. The `goulart-verify` adapter additionally checks that code-review exists and triage is complete before proceeding.
+**Decision:** `verify` requires `code-review` in the artifact graph. Before producing verify.md, `goulart-verify` independently checks:
 
-**Rationale:** This prevents verification from proceeding without an independent code review. The artifact graph enforces ordering; the adapter enforces the semantic gate.
+- code-review exists and its verdict/dispositions permit progression;
+- mandatory human triage is complete;
+- all tasks in tasks.md are complete;
+- every required test-plan entry has a final evaluable state (completed AUTOMATED/MECHANICAL check and recorded result, or documented SEMANTIC evaluation);
+- review freshness, with any explicitly permitted override recorded rather than presented as fresh review;
+- degraded-review disclosure and human acknowledgement where applicable.
+
+Missing review, incomplete tasks, incomplete mandatory triage, or unevaluable entries block verification and identify the gap. These are not waived by a review override. Completed but failing validations remain evaluable and result in FAIL during the audit. The audit then checks compliance, test integrity, and review completeness before emitting DECISION.
+
+**Rationale:** This is defense in depth: artifact existence/order does not prove semantic implementation completion. A qualifying review may be independent or explicitly degraded under D17; verification preserves that distinction.
 
 ### D8: Behavioral test integrity
 
@@ -249,8 +277,8 @@ Key distinction: `requires:` proves artifact existence/order but does NOT prove 
 
 **Decision:** Verify distinguishes two review staleness lineages:
 
-- **Plan-review staleness**: material changes to proposal/specs/design after the plan-review verdict require a new plan-review.
-- **Code-review staleness**: material changes to source code/tests/config after the code-review verdict require a new code-review.
+- **Plan-review staleness**: any material change to proposal/specs/design after review makes it stale, including reviewer-requested Required Changes. Normal progression requires re-review; the explicit plan override in D5 remains an exception, not evidence of freshness. Only non-material corrections preserve freshness without another review, with the rationale recorded in the review artifact and checked during verification.
+- **Code-review staleness**: material changes to source code/tests/implementation-relevant config after review make it stale, including changes addressing accepted findings. Re-review is required before normal progression to verify; non-material corrections may avoid re-review only with a clear recorded justification. The explicit override in D19 records a waived review condition without claiming review of the changed implementation.
 
 Staleness detection uses repository revision/diff information where available, falling back to conservative semantic comparison. Filesystem timestamps SHALL NOT be used as reliable staleness evidence (unstable across clone, checkout, rebase, CI, file copy).
 
@@ -304,13 +332,13 @@ If a harness supports true isolated subcontexts, an adapter MAY optimize by spaw
 
 ### D17: Fresh-context fallback hierarchy
 
-**Decision:** Fresh-context independence is prioritized over cross-model review. The fallback hierarchy is:
+**Decision:** Independent review SHALL use a context/session separate from the author/implementer context. Fresh-context independence is prioritized over optional cross-model review. The fallback hierarchy is:
 
-1. Harness-created fresh context (preferred)
-2. User-managed fresh session (fallback)
+1. Separate/fresh context supplied by the harness (preferred)
+2. User-managed separate clean session (fallback; still independent)
 3. Degraded review mode (last resort)
 
-In degraded mode: review MAY proceed, limitation MUST be disclosed, human MUST acknowledge degraded independence, result MUST NOT be described as independent review.
+Only when neither separate-context option is available MAY review proceed without a separate context in degraded mode. The limitation MUST be disclosed, the human MUST acknowledge it, and the result MUST NOT be described as independent review. Separate context is a process practice, not mechanical proof of cognitive isolation.
 
 **Rationale:** A SHALL requirement that contradicts graceful degradation is incoherent. The fallback hierarchy provides clear, honest escalation.
 
@@ -318,7 +346,19 @@ In degraded mode: review MAY proceed, limitation MUST be disclosed, human MUST a
 
 **Decision:** Each review artifact records `ROUND: 1 | 2` and a concise previous-round disposition/history. This prevents overwriting review evidence while remaining lightweight.
 
+Both review stages have a maximum of two review/revision rounds, including re-review after APPROVE_WITH_CHANGES and other material post-review changes. Round 2 with unresolved blocking/required changes or a material change requiring further review SHALL STOP and escalate to the human. No automatic third round or history reset is allowed. Explicit human override, where permitted by the relevant verdict contract, must identify the waived condition and reason.
+
 **Rationale:** Minimal approach avoids an elaborate review-history subsystem while preserving enough information to know the current round and previous outcome.
+
+### D19: Code-review verdict transitions
+
+**Decision:** APPROVE means no blocking implementation changes are required. Any findings still require human triage; a clean review needs no additional approval. After triage, verify may proceed if the review remains current and implementation-completeness prerequisites pass.
+
+APPROVE_WITH_CHANGES identifies at least one required implementation change, subject to explicit human triage. Accepted/required changes must be addressed. Material fixes make the review stale and require another round before normal progression; clearly justified non-material corrections may avoid re-review. REJECT or DEFER requires justification and does not permit normal progression while an unresolved blocking/Critical condition remains.
+
+REVISE blocks normal progression: revise and re-review. A human may explicitly override only with a recorded reason identifying the waived review condition. Triage alone is not an override of an unresolved blocking condition, and overrides do not substitute for task completion or test-plan readiness. D18's round limit applies to every required re-review.
+
+**Rationale:** Explicit transitions connect finding disposition, implementation changes, review freshness, and verification without adding an unconditional second approval gate.
 
 ## Risks / Trade-offs
 

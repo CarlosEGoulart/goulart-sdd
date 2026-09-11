@@ -5,14 +5,14 @@ Defines the pre-implementation adversarial review that gates downstream artifact
 ## ADDED Requirements
 
 ### Requirement: Plan review gates implementation
-A plan-review artifact SHALL exist with an acceptable verdict and human acceptance before the test-plan, tasks, or apply may proceed.
+A plan-review artifact SHALL exist before Goulart-compliant test-plan, tasks, or apply may proceed. The gate SHALL require the verdict conditions below, STATUS: ACCEPTED or an explicitly permitted STATUS: OVERRIDDEN with reason, and resolution of staleness through re-review or the recorded override. Degraded review additionally requires disclosure and human acknowledgement; it does not establish independence.
 
 #### Scenario: Apply blocked without review
-- **WHEN** the apply operation is invoked and plan-review.md does not exist
+- **WHEN** goulart-apply is invoked and plan-review.md does not exist
 - **THEN** the workflow SHALL refuse to proceed
 
 #### Scenario: Apply blocked on REVISE
-- **WHEN** the apply operation is invoked and plan-review.md verdict is REVISE
+- **WHEN** goulart-apply is invoked and plan-review.md verdict is REVISE without a recorded human override with mandatory reason
 - **THEN** the workflow SHALL refuse to proceed until artifacts are revised and re-reviewed
 
 #### Scenario: Apply blocked without human acceptance
@@ -26,16 +26,21 @@ The plan-review SHALL emit exactly one verdict: APPROVE, APPROVE_WITH_CHANGES, o
 
 The plan is acceptable as-is.
 
-- Human may record `STATUS: ACCEPTED` with optional reason.
+- Human records `STATUS: ACCEPTED` with optional reason.
 - Downstream planning may proceed.
 
 #### Verdict: APPROVE_WITH_CHANGES
 
 Required changes MUST be applied before proceeding.
 
-- Human SHALL NOT record `STATUS: ACCEPTED` if required changes remain unapplied.
-- After material required changes are applied: run plan-review again before normal progression; OR human MAY explicitly record `STATUS: OVERRIDDEN` with mandatory reason to proceed without re-review.
-- `ACCEPTED` MUST NOT silently mean that unapplied required changes are acceptable.
+After applying Required Changes, determine whether changes are material:
+
+- **Material changes** (changes that affect requirements, scope, architecture, acceptance criteria, or implementation assumptions): new plan-review round required, unless human explicitly records `STATUS: OVERRIDDEN` with mandatory reason.
+- **Non-material changes** (editorial corrections that do not change requirements, scope, architecture, acceptance criteria, or implementation assumptions): human MAY record `STATUS: ACCEPTED` with justification for why changes are classified as non-material. Re-review MAY be skipped.
+
+The review artifact MUST state why the changes are classified as non-material when re-review is skipped.
+
+`ACCEPTED` MUST NOT be used to bypass unapplied Required Changes.
 
 #### Verdict: REVISE
 
@@ -44,22 +49,33 @@ Normal progression is blocked.
 - Artifacts must be revised and reviewed again.
 - Human may explicitly `STATUS: OVERRIDDEN` only with mandatory justification.
 - Maximum 2 review/revision rounds per review stage.
-- After the second unresolved REVISE/required-changes round: STOP and escalate to the human with a clear summary of unresolved issues.
+- After round 2 leaves REVISE, unresolved Required Changes, or a material change requiring further review: STOP and escalate to the human with a clear summary of unresolved issues. Do not start a third round automatically. The same limit applies to APPROVE_WITH_CHANGES and other material post-review changes.
 
 #### Scenario: Human accepts plan
 - **WHEN** the plan-review verdict is APPROVE
 - **THEN** the human SHALL record STATUS: ACCEPTED with optional reason
 - **THEN** downstream planning may proceed
 
-#### Scenario: Human accepts with changes applied
+#### Scenario: Human accepts with non-material changes applied
 - **WHEN** the plan-review verdict is APPROVE_WITH_CHANGES
-- **THEN** the human SHALL ensure required changes are applied
-- **THEN** the human SHALL record STATUS: ACCEPTED
-- **THEN** downstream planning may proceed
+- **AND** the required changes are demonstrably non-material (editorial corrections only)
+- **AND** the changes have been applied
+- **THEN** the human MAY record STATUS: ACCEPTED with justification for non-material classification
+- **THEN** downstream planning may proceed without another review
 
-#### Scenario: Human proceeds without re-review
+#### Scenario: Material changes require re-review
 - **WHEN** the plan-review verdict is APPROVE_WITH_CHANGES
+- **AND** the required changes are material
+- **THEN** a new plan-review round SHALL be required after changes are applied for normal progression; at the two-round limit the workflow SHALL stop and escalate instead
+
+#### Scenario: Human overrides re-review
+- **WHEN** the plan-review verdict is APPROVE_WITH_CHANGES and all Required Changes have been applied, including material changes
 - **THEN** the human MAY record STATUS: OVERRIDDEN with mandatory reason to proceed without re-review
+- **THEN** the artifact SHALL record the affected inputs and waived re-review requirement without claiming the stale review covers the changed plan
+
+#### Scenario: Unapplied Required Changes block acceptance
+- **WHEN** APPROVE_WITH_CHANGES has unapplied Required Changes
+- **THEN** STATUS: ACCEPTED SHALL NOT permit downstream planning or goulart-apply
 
 #### Scenario: Human requests revision
 - **WHEN** the human is unsatisfied with the plan
@@ -72,35 +88,35 @@ Normal progression is blocked.
 - **THEN** downstream planning may proceed
 
 #### Scenario: Review escalation
-- **WHEN** the second review round produces a REVISE verdict or unapplied APPROVE_WITH_CHANGES
+- **WHEN** round 2 leaves REVISE, unresolved Required Changes, or material changes requiring further review
 - **THEN** the workflow SHALL STOP and escalate to the human
 
-### Requirement: Fresh context for review with fallback hierarchy
-The plan-reviewer SHOULD use a fresh context. The reviewer SHALL NOT be the same context that authored the proposal, specs, or design.
+### Requirement: Independent review
+Independent review SHALL use a context/session separate from the author/implementer context.
 
-Fresh-context independence SHALL be prioritized over cross-model review. The fallback hierarchy is:
+#### Scenario: Independent review with fresh context
+- **WHEN** an independent plan-review is performed using a harness-supplied separate context or a user-managed separate clean session
+- **THEN** the reviewer SHALL use a context/session separate from the author/implementer context
+- **THEN** the review result SHALL be described as independently reviewed
 
-1. **Harness-created fresh context** (preferred) — the coding-agent harness spawns a provably isolated context.
-2. **User-managed fresh session** (fallback) — the user starts a separate clean session manually.
-3. **Degraded review mode** (last resort) — when neither 1 nor 2 is possible:
-   - The review MAY still be performed.
-   - The limitation MUST be explicitly disclosed.
-   - The human MUST acknowledge the degraded independence.
-   - The result MUST NOT be described as an independent review.
+### Requirement: Degraded review fallback
+Degraded review MAY run without a separate context only when fresh context and a manual fresh session are unavailable. Degraded review MUST disclose the limitation, MUST receive human acknowledgement, and MUST NOT be described as independent review.
+
+The fallback hierarchy is:
+
+1. Separate/fresh context supplied by the harness (preferred)
+2. User-managed separate clean session (fallback)
+3. Degraded review (last resort)
 
 Cross-model review remains optional and is NOT required for independence.
 
-#### Scenario: Harness-created fresh context
-- **WHEN** the harness can spawn a fresh context
-- **THEN** the plan-reviewer SHALL use a fresh context
-
 #### Scenario: User-managed fresh session
-- **WHEN** the harness cannot spawn fresh contexts but the user can start a separate session
+- **WHEN** the harness cannot supply a fresh context but the user can start a separate session
 - **THEN** the user SHALL start a separate clean session for the review
 - **THEN** the review result SHALL be described as independently reviewed
 
 #### Scenario: Degraded review mode
-- **WHEN** neither harness-created fresh context nor user-managed fresh session is possible
+- **WHEN** neither harness-supplied fresh context nor user-managed fresh session is possible
 - **THEN** the review MAY proceed in degraded mode
 - **THEN** the limitation SHALL be explicitly disclosed in the review artifact
 - **THEN** the human SHALL acknowledge the degraded independence
@@ -127,7 +143,7 @@ The artifact SHALL NOT simply overwrite the review with no evidence of which rou
 - **THEN** the artifact SHALL record ROUND: 1
 
 #### Scenario: Second round after revision
-- **WHEN** the plan-review is performed after artifacts were revised following a REVISE or APPROVE_WITH_CHANGES verdict
+- **WHEN** a second plan-review follows round 1 due to REVISE, material APPROVE_WITH_CHANGES corrections, or another material change to reviewed inputs
 - **THEN** the artifact SHALL record ROUND: 2
 - **THEN** the artifact SHALL include a concise summary of the previous-round disposition
 
