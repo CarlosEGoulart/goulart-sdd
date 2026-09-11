@@ -192,6 +192,16 @@ artifacts:
       - specs
       - design
 
+  - id: test-plan
+    generates: test-plan.md
+    description: Test plan defining validation approach for the change
+    template: test-plan.md
+    instruction: |
+      Create the test plan artifact. This is a placeholder for the full test-plan instruction (Task 3.2).
+    requires:
+      - specs
+      - plan-review
+
   - id: tasks
     generates: tasks.md
     description: Implementation checklist with trackable tasks
