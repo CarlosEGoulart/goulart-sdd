@@ -6,7 +6,7 @@
 - [x] 1.4 Add the `test-plan` artifact to `schema.yaml` with `requires: [specs, plan-review]` and verify validation passes
 - [x] 1.5 Add the `code-review` artifact to `schema.yaml` with `requires: [tasks]` and verify validation passes
 - [x] 1.6 Add the `verify` artifact to `schema.yaml` with `requires: [code-review]` and verify validation passes
-- [ ] 1.7 Update the `tasks` artifact `requires` to `[test-plan, design, plan-review]` and verify the full dependency graph resolves correctly with `openspec schema validate goulart-sdd`
+- [x] 1.7 Update the `tasks` artifact `requires` to `[test-plan, design, plan-review]` and verify the full dependency graph resolves correctly with `openspec schema validate goulart-sdd`
 - [ ] 1.8 Set `goulart-sdd` as the default schema in `openspec/config.yaml` by updating the `schema:` field and verify `openspec schemas --json` lists it
 
 ## 2. Schema Templates
