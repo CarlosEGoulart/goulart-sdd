@@ -245,6 +245,15 @@ artifacts:
       - specs
       - design
 
+  - id: code-review
+    generates: code-review.md
+    description: Post-implementation code review gate
+    template: code-review.md
+    instruction: |
+      Create the code review artifact. This is a placeholder for the full code-review instruction (Task 3.3).
+    requires:
+      - tasks
+
 apply:
   requires: [ tasks ]
   tracks: tasks.md
