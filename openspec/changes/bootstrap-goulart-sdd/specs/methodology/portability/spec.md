@@ -1,0 +1,41 @@
+## Purpose
+
+Defines the agent-agnostic methodology design that supports multiple coding-agent integrations and inexpensive or local models.
+
+## ADDED Requirements
+
+### Requirement: No mandatory LLM vendor
+Goulart SDD SHALL NOT mandate a particular LLM vendor, model, or API provider. The methodology SHALL remain usable with local, free, or inexpensive models.
+
+#### Scenario: Vendor independence
+- **WHEN** a user adopts Goulart SDD
+- **THEN** they SHALL NOT be required to use a specific LLM provider
+
+### Requirement: Role-tier model support
+The methodology SHOULD support an architecture where planning and review use stronger reasoning models, implementation uses cheaper models, and verification uses lightweight models.
+
+#### Scenario: Model tier separation
+- **WHEN** different roles use different models
+- **THEN** the methodology SHALL NOT require all roles to use the same model
+
+### Requirement: Fresh context is more important than cross-model
+Fresh-context independence SHALL be prioritized over cross-model review. Cross-model review MAY be recommended but SHALL NOT be mandatory.
+
+#### Scenario: Same-model fresh context
+- **WHEN** only one model is available
+- **THEN** the methodology SHALL still function with fresh-context review on the same model
+
+### Requirement: OpenCode as first reference adapter
+OpenCode SHALL be the first coding-agent integration implemented. The methodology SHALL NOT be OpenCode-specific; the schema and methodology docs SHALL be agent-agnostic.
+
+#### Scenario: Adapter portability
+- **WHEN** a user wants to use Goulart SDD with a different coding agent
+- **THEN** they SHALL be able to create a new adapter without modifying the methodology or schema
+
+### Requirement: Graceful degradation
+When a coding-agent harness does not support a feature (fresh context, cross-model review, automated TDD), the methodology SHALL degrade gracefully with clear documentation of what is lost.
+
+#### Scenario: Missing harness feature
+- **WHEN** the coding-agent harness cannot spawn fresh contexts
+- **THEN** the methodology SHALL still function
+- **THEN** the limitation SHALL be documented
