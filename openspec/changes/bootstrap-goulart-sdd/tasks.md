@@ -1,7 +1,7 @@
 ## 1. Custom Schema Foundation
 
 - [x] 1.1 Fork `spec-driven` schema into `openspec/schemas/goulart-sdd/` using `openspec schema fork spec-driven goulart-sdd` and verify the directory structure contains `schema.yaml` and `templates/`
-- [ ] 1.2 Review the forked `schema.yaml` to understand the base artifact graph and verify the file is valid YAML with `openspec schema validate goulart-sdd`
+- [x] 1.2 Review the forked `schema.yaml` to understand the base artifact graph and verify the file is valid YAML with `openspec schema validate goulart-sdd`
 - [ ] 1.3 Add the `plan-review` artifact to `schema.yaml` with `requires: [proposal, specs, design]` and verify `openspec schema validate goulart-sdd` passes
 - [ ] 1.4 Add the `test-plan` artifact to `schema.yaml` with `requires: [specs, plan-review]` and verify validation passes
 - [ ] 1.5 Add the `code-review` artifact to `schema.yaml` with `requires: [tasks]` and verify validation passes
