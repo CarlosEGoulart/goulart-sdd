@@ -14,11 +14,11 @@
 
 **Degraded Review Disclosure:**
 <!-- If Review Mode is Degraded, the limitation MUST be disclosed here. -->
-<!-- The human MUST acknowledge degraded mode before any ACCEPTED disposition. -->
+<!-- The human MUST acknowledge degraded mode before any disposition that permits downstream progression (ACCEPTED or permitted OVERRIDDEN). -->
 <!-- A degraded review MUST NOT be described as independent. -->
 
 - [ ] Degraded review limitation disclosed (required if Degraded mode)
-- [ ] Human acknowledgement of degraded independence recorded (required if Degraded mode)
+- [ ] Human acknowledgement of degraded-review limitation recorded (required if Degraded mode)
 
 ---
 
@@ -45,6 +45,7 @@
 <!-- Required: Record exactly what was reviewed and at which revision -->
 
 **Review Timestamp:** _______________
+<!-- Timestamp is informational only; review freshness is determined from reviewed revisions/paths, not time. -->
 
 **Proposal:**
 
@@ -177,10 +178,10 @@
 **STATUS:** ACCEPTED | REVISE | OVERRIDDEN
 
 **Human Reason:**
-<!-- Reason is mandatory for OVERRIDDEN -->
-<!-- Reason is recommended for REVISE -->
-<!-- Reason is optional for APPROVE + ACCEPTED -->
-<!-- For APPROVE_WITH_CHANGES + ACCEPTED: must include non-material classification justification -->
+<!-- Human Reason is REQUIRED for REVISE -->
+<!-- Human Reason is REQUIRED for OVERRIDDEN -->
+<!-- Human Reason is optional for APPROVE + ACCEPTED -->
+<!-- For APPROVE_WITH_CHANGES + ACCEPTED, include the required NON_MATERIAL justification -->
 
 ```
 <!-- Human records decision reason here -->
