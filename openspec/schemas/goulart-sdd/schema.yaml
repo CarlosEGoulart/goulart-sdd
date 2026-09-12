@@ -415,7 +415,163 @@ artifacts:
     description: Test plan defining validation approach for the change
     template: test-plan.md
     instruction: |
-      Create the test plan artifact. This is a placeholder for the full test-plan instruction (Task 3.2).
+      Create test-plan.md as a behavioral coverage ledger that maps every specification scenario to explicit validation evidence.
+
+      ## Test-plan mission
+
+      1. Read every applicable spec file for the current change.
+      2. Identify every `#### Scenario:` in every spec file.
+      3. Create at least one validation entry for every scenario.
+      4. Preserve Spec Path + Requirement + Scenario identity.
+      5. Allow more than one validation entry for one scenario where useful.
+      6. Calculate the coverage summary.
+      7. Refuse to treat the plan as complete while any scenario is unmapped.
+
+      Do not invent scenarios that do not exist in the specs.
+      Do not silently omit scenarios because they appear difficult to test.
+
+      ## Coverage gate
+
+      Record:
+      - Total Scenarios: actual count from all spec files
+      - Mapped Scenarios: scenarios with at least one validation entry
+      - Unmapped Scenarios: scenarios with zero validation entries
+
+      Before downstream tasks may be created:
+      - Unmapped Scenarios MUST equal 0.
+      - If any scenario remains unmapped, record the gap.
+      - Do not claim the test-plan is complete.
+      - Downstream task generation is blocked until the gap is resolved.
+
+      A placeholder or TODO entry does not count as a real mapping unless it contains an actual evaluable validation approach.
+
+      ## Validation types
+
+      Each validation entry MUST use exactly one of:
+      - AUTOMATED
+      - MECHANICAL
+      - SEMANTIC
+
+      Do not introduce MANUAL, REVIEW, HYBRID, OTHER, or any fourth type.
+
+      ## AUTOMATED
+
+      Use when the behavior can reasonably be verified by an automated test (unit, integration, E2E, or other executable behavioral test).
+
+      For every AUTOMATED entry require:
+      - test file/path;
+      - test function/method/test name.
+
+      If the test does not exist yet, the plan may identify the intended path/name.
+      Do not falsely claim a test already exists or passes.
+      The test-plan is planning/coverage evidence, not execution proof.
+
+      ## MECHANICAL
+
+      Use when the scenario can be validated deterministically by a tool or command (lint, typecheck, build, schema validation, static check, deterministic repository command).
+
+      For every MECHANICAL entry require:
+      - exact command or mechanical check sufficient to evaluate the scenario.
+
+      The command must actually evaluate the mapped scenario or requirement.
+      Do not use MECHANICAL merely because a command can be run.
+
+      ## SEMANTIC
+
+      Use only when automated or mechanical validation is not reasonably suitable.
+
+      For every SEMANTIC entry require:
+      - rationale explaining why automation/mechanical validation is unsuitable;
+      - evaluator: who or what performs the evaluation;
+      - evaluation description sufficient for later verification.
+
+      Do not use SEMANTIC as an escape hatch for tests that are merely inconvenient to write.
+      Do not fabricate a human evaluation that has not occurred.
+      At planning time, describe the required future evaluation.
+
+      ## Coverage ledger
+
+      Populate the approved test-plan.md template fields.
+
+      Primary ledger entry:
+      - stable ID (TP-001, TP-002, etc.);
+      - Spec Path;
+      - Requirement;
+      - Scenario;
+      - Validation Type;
+      - Test File/Command;
+      - Test Name;
+      - Status.
+
+      For SEMANTIC entries also populate the Semantic Entry Detail section:
+      - same ID;
+      - Semantic Rationale;
+      - Semantic Evaluator;
+      - Evaluation Description.
+
+      Use the same TP-* ID to connect the ledger row and semantic detail.
+
+      ## Status semantics
+
+      Status values: NOT_STARTED | RED | GREEN | REFACTOR | PASS | DEFERRED
+
+      Rules:
+      - Statuses are tracking/visibility evidence only.
+      - Status reflects known current state only.
+      - Status does NOT prove historical chronology.
+      - RED followed later by GREEN is NOT proof that test-first TDD actually occurred.
+      - The methodology MUST NOT claim chronological proof from test-plan status.
+      - Do not require Git timestamps or filesystem timestamps as TDD proof.
+
+      ## Planning-time truthfulness
+
+      When initially generating test-plan.md:
+      - do not mark an unimplemented automated test as PASS;
+      - do not claim a command passed unless it was actually executed and observed;
+      - do not claim semantic evaluation completed unless it actually occurred;
+      - use an honest planning status such as NOT_STARTED where appropriate.
+
+      Do not fabricate evidence.
+
+      ## Behavioral coverage integrity
+
+      Tests or validations SHALL NOT be removed, weakened, skipped, or replaced in a way that reduces required behavioral coverage without an explicitly justified specification change.
+
+      When validations change:
+      - required scenario behavior must remain covered;
+      - renaming, moving, consolidating, or replacing a test is allowed if required behavioral coverage remains intact;
+      - reduction in required coverage requires a corresponding explicit spec amendment.
+
+      The rule is about retained behavior/scenario coverage, NOT file identity.
+
+      Record coverage changes in the template's Coverage Integrity section:
+      - Entry;
+      - Change;
+      - Coverage Impact;
+      - Spec Amendment;
+      - Rationale.
+
+      A coverage reduction without a corresponding justified spec amendment is not permitted.
+      For a newly generated test plan with no validation changes yet, do not invent coverage-change records.
+
+      ## Duplicate scenario names
+
+      If two scenarios share the same display name, do not collapse them.
+      Identity is Spec Path + Requirement + Scenario.
+      Each distinct scenario occurrence must be represented.
+
+      ## Relationship to TDD
+
+      This instruction is focused on test planning.
+      It prepares AUTOMATED validations that may later participate in RED-GREEN-REFACTOR.
+      This instruction does NOT implement the tasks-instruction TDD contract or apply execution logic.
+      Do not add one-task-per-invocation execution logic, retry mechanics, implementation sequencing, or implementer context rules.
+
+      ## Artifact-writing behavior
+
+      Populate the approved test-plan template (test-plan.md).
+      The instruction defines coverage and validation semantics; the template owns the artifact shape.
+      Do not duplicate the entire template inside schema.yaml.
     requires:
       - specs
       - plan-review
