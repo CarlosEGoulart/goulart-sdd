@@ -593,7 +593,7 @@ artifacts:
       Guidelines:
       - Group related tasks under ## numbered headings
       - Each task MUST be a checkbox: `- [ ] X.Y Task description`
-      - Tasks should be small enough to complete in one session
+      - Each implementation task MUST be small/focused enough to complete in one coding-agent session
       - Order tasks by dependency (what must be done first?)
       - Each task MUST state how to verify completion (a test, command,
         observable behavior, or delivered artifact). Put the verification in
@@ -601,7 +601,96 @@ artifacts:
         when it checks broader integration or system behavior that spans
         multiple implementation tasks.
 
-      Example:
+      ## TDD execution ordering
+
+      For behavior with an AUTOMATED test-plan validation where automated
+      testing is appropriate, each generated task MUST enforce this execution
+      order internally:
+
+      **RED** — write or update the automated test first; run it; confirm it
+      fails for the expected reason BEFORE any implementation.
+
+      **GREEN** — implement the minimum behavior required to make the relevant
+      test pass.
+
+      **REFACTOR** — improve structure/clarity where useful; keep the relevant
+      test and the applicable suite green.
+
+      Do NOT create three separate checkbox tasks named RED, GREEN, REFACTOR
+      for every behavior. One focused implementation task internally follows
+      RED → GREEN → REFACTOR. Separate tasks are acceptable only when they are
+      independently meaningful implementation units, not merely to split the
+      TDD labels.
+
+      When the relevant test-plan entry is AUTOMATED, the generated task
+      should identify or reference the intended test when known. The task must
+      require: test first → confirm expected failure → minimum implementation
+      → passing test → refactor while green. Do NOT claim the test already
+      exists or already passes unless current repository evidence establishes
+      that fact.
+
+      ## Validation-type task behavior
+
+      **AUTOMATED** — follow the RED → GREEN → REFACTOR contract above.
+      Reference the test file and function name from the test-plan entry.
+
+      **MECHANICAL** — do NOT invent an automated test to satisfy TDD wording.
+      Generate the focused implementation/configuration task. Include the exact
+      mechanical command or check from the test-plan where applicable. Require
+      that validation as completion evidence.
+
+      **SEMANTIC** — do NOT fabricate an automated test. Generate the focused
+      implementation/artifact task and reference the required semantic
+      evaluation evidence from the test-plan. The task may require preparation
+      for later semantic evaluation but MUST NOT claim the human/evaluator has
+      already approved something not actually evaluated.
+
+      ## No meaningless tests
+
+      Do NOT create meaningless, tautological, placeholder, or
+      implementation-free tests merely to satisfy RED → GREEN → REFACTOR. TDD
+      applies where automated behavioral testing is appropriate. Mechanical or
+      semantic-only work follows its approved test-plan validation type.
+
+      ## Task traceability
+
+      Every focused implementation task MUST map to exactly one primary:
+
+      - approved acceptance criterion / spec scenario; OR
+      - test-plan entry.
+
+      When practical, include both the relevant scenario identity and TP-* entry
+      when they represent the same focused behavior. The purpose is to keep
+      each task bounded and traceable. Do NOT allow unrelated scenarios in one
+      implementation task. Do NOT create duplicate tasks merely to inflate
+      count. Do NOT require artificial mappings that invent requirements.
+
+      A separate verification task may exist only when it checks broader
+      integration or system behavior spanning multiple implementation tasks.
+      That broader verification task is not an excuse to make implementation
+      tasks unbounded.
+
+      ## Spec drift
+
+      If implementation later reveals that a requirement or scenario is wrong,
+      incomplete, contradictory, or untestable, the implementer must STOP and
+      report the conflict. The implementation must NOT silently edit the spec,
+      weaken the test, or reinterpret the requirement only to make
+      implementation pass. The spec must be amended before implementation
+      resumes. This instruction encodes the guidance; the apply adapter owns
+      the runtime workflow.
+
+      ## Chronology evidence boundary
+
+      TDD is a PROCESS requirement enforced by task instructions and human
+      oversight. Do NOT claim that task checkbox state, test-plan RED/GREEN
+      status, Git timestamps, or filesystem timestamps prove historical TDD
+      chronology. Generated tasks may REQUIRE the RED → GREEN → REFACTOR
+      process, but task/status artifacts are not mechanical proof that it
+      occurred chronologically.
+
+      ## Example
+
       ```
       ## 1. Setup
 
@@ -610,8 +699,12 @@ artifacts:
 
       ## 2. Core Implementation
 
-      - [ ] 2.1 Implement data export function and verify the export test passes
-      - [ ] 2.2 Add CSV formatting utilities and verify unit tests cover quoting and delimiters
+      - [ ] 2.1 Implement CSV export for the successful-export scenario (TP-004):
+            first write/confirm the failing export test, implement the minimum
+            behavior to pass, refactor while keeping the relevant suite green,
+            and verify TP-004 passes
+      - [ ] 2.2 Configure schema validation and verify with
+            `openspec schema validate goulart-sdd`
       ```
 
       Reference specs for what needs to be built, design for how to build it.
