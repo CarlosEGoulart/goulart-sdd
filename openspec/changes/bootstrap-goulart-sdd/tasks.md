@@ -15,7 +15,7 @@
 - [x] 2.2 Create `openspec/schemas/goulart-sdd/templates/code-review.md` with Review Metadata (including degraded disclosure/acknowledgement), ROUND: 1 | 2 and previous outcome, Reviewed Implementation (revision/paths), Findings (severity + category), Verdict, Per-Finding Human Triage (ACCEPT/REJECT/DEFER), Required Changes with materiality justification, and any explicit override/reason; verify it supports each code-review transition without requiring approval for a clean review
 - [x] 2.3 Create `openspec/schemas/goulart-sdd/templates/test-plan.md` with table format for: Requirement, Scenario, Validation Type (AUTOMATED/MECHANICAL/SEMANTIC), Test File/Command, Test Name, Status, and verify the file exists
 - [x] 2.4 Create `openspec/schemas/goulart-sdd/templates/verify.md` with sections for: Prerequisites Checked, Reviewed Revision, Reviewed Paths, Task Completion, Test Integrity, Review Staleness (plan-review and code-review), Scope Drift, Decision (PASS/PASS_WITH_WARNINGS/FAIL), and verify the file exists
-- [ ] 2.5 Modify `openspec/schemas/goulart-sdd/templates/tasks.md` to include TDD ordering instructions (write failing test, implement to pass, refactor) and verify the file exists
+- [x] 2.5 Modify `openspec/schemas/goulart-sdd/templates/tasks.md` to include TDD ordering instructions (write failing test, implement to pass, refactor) and verify the file exists
 - [ ] 2.6 Run `openspec schema validate goulart-sdd` and confirm all templates resolve without errors
 
 ## 3. Schema Instructions
