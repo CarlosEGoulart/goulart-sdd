@@ -151,9 +151,18 @@ Normal implementation may proceed only when the plan gate permits it.
 - APPROVE_WITH_CHANGES + all applied NON_MATERIAL changes + recorded materiality
   rationale + STATUS: ACCEPTED → may proceed if all other gates pass.
 
+- APPROVE_WITH_CHANGES + ALL Required Changes Applied: Yes + one or more
+  MATERIAL changes + no current later re-review + exact permitted human
+  STATUS: OVERRIDDEN with complete override evidence (section 4f) → MAY
+  proceed if every other apply gate passes. Prior review remains STALE; the
+  override waives only the explicitly recorded re-review condition. Unapplied
+  Required Changes can NEVER be waived by this path. Degraded acknowledgement,
+  artifact existence and other independent prerequisites remain required.
+
 - REVISE + exact human STATUS: OVERRIDDEN + mandatory reason identifying the
-  waived condition → may proceed only under the exact override; freshness is
-  assessed independently (section 4d).
+  waived condition + complete override evidence (section 4f) → may proceed
+  only under the exact override; freshness is assessed independently
+  (section 4d).
 
 **Blocking states:**
 
@@ -173,7 +182,7 @@ Normal implementation may proceed only when the plan gate permits it.
 - APPROVE + human STATUS missing/pending → STOP.
 
 - APPROVE_WITH_CHANGES + any unapplied Required Change → STOP. List every
-  unapplied RC.
+  unapplied RC. Unapplied RCs can NEVER be waived by override.
 
 - APPROVE_WITH_CHANGES + applied MATERIAL change + no current re-review and
   no exact permitted human override → STOP because previous review is stale.
@@ -181,9 +190,12 @@ Normal implementation may proceed only when the plan gate permits it.
 - REVISE without an exact permitted human STATUS: OVERRIDDEN with mandatory
   reason → STOP.
 
-- Degraded review without required human acknowledgement → STOP.
+- OVERRIDDEN exists but required material-change override evidence
+  (section 4f) is missing or incomplete → STOP.
 
-- Stale review without the exact contractually permitted resolution → STOP.
+- Degraded review without BOTH disclosed limitation AND actual human
+  acknowledgement → STOP. Do not describe degraded review as independent. Do
+  not change review mode from the apply context.
 
 ### 4c. Do NOT fabricate
 
@@ -225,6 +237,71 @@ Raw OpenSpec artifacts may exist. Do not assume they satisfy Goulart gates
 merely because all files exist. If the change appears to have bypassed Goulart
 sequencing, evaluate actual evidence. If required Goulart guarantees are absent,
 STOP and report them. Do not retroactively call raw execution Goulart-compliant.
+
+### 4f. Exact override evidence
+
+When the gate relies on an override, always require:
+
+- actual human STATUS: OVERRIDDEN recorded in the plan-review artifact;
+- mandatory Human Reason identifying the exact condition being overridden/waived;
+- the evidence applies to the actual condition blocking progression.
+
+When material reviewed inputs changed and re-review is being waived, additionally
+require the actual plan-review evidence fields:
+
+- Affected Inputs: each affected reviewed input path;
+- Change Description: concise description of the change to each affected input;
+- Re-review Waived: Yes;
+- Waiver Reason: mandatory — identifies the waived re-review condition.
+
+Check the evidence against the actual changed planning inputs. If any applicable
+field or evidence is missing: STOP.
+
+Multiple unresolved conditions must be explicitly covered; do not interpret one
+override as a blanket waiver.
+
+Override must NOT replace:
+
+- missing artifacts;
+- unapplied Required Changes;
+- degraded-review acknowledgement;
+- human disposition evidence;
+- test-plan existence/evaluability needed for the selected task.
+
+Override does NOT make STALE → FRESH.
+
+### 4g. Review round / history gate
+
+For a pending implementation task, validate review-round evidence before
+implementation.
+
+Require ROUND: 1 or ROUND: 2.
+
+Reject as unresolved evidence:
+
+- missing ROUND;
+- ambiguous ROUND;
+- ROUND outside 1|2;
+- attempted ROUND 3.
+
+For ROUND 2: require concise previous-round outcome/history as defined by the
+plan-review contract. Missing or empty Round 2 history is an unresolved
+evidence gap.
+
+If Round 2 still records a state that requires another review, including:
+
+- unresolved REVISE;
+- unresolved Required Changes;
+- another material change requiring further review;
+
+→ STOP → report human escalation → do NOT invent Round 3 → do NOT reset
+history.
+
+An actually recorded human exception may only be consumed if it satisfies the
+exact override contract (section 4f) and the artifact no longer contains an
+unresolved escalation condition that the exception does not explicitly address.
+
+Do not fabricate escalation resolution.
 
 ## 5. Task selection
 
