@@ -35,7 +35,7 @@
 ## 5. goulart-review Adapter
 
 - [x] 5.1 Create `.opencode/skills/goulart-review/SKILL.md` for plan/code reviews using their separate artifact contracts, independent-context versus disclosed/acknowledged degraded fallback, severity/category findings, stage-specific verdict transitions, human plan disposition versus conditional code triage, materiality/staleness, explicit overrides, and bounded round persistence; verify behavior matches both review specs
-- [ ] 5.2 Create `.opencode/commands/goulart-review.md` command file that invokes the goulart-review skill and verify the file exists
+- [x] 5.2 Create `.opencode/commands/goulart-review.md` command file that invokes the goulart-review skill and verify the file exists
 
 ## 6. goulart-apply Adapter
 
