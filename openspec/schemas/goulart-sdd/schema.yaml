@@ -786,7 +786,210 @@ artifacts:
     description: Final verification gate before archive
     template: verify.md
     instruction: |
-      Create the verify artifact. This is a placeholder for the full verify instruction (Task 3.4).
+      Perform a final whole-change audit and produce verify.md with exactly one DECISION.
+
+      ## Prerequisite phase
+
+      Independently check every mandatory prerequisite before performing the audit.
+
+      Required prerequisite checks:
+      A. Code-review.md exists — an override cannot replace a missing artifact.
+      B. Code-review verdict/triage/override state permits progression.
+      C. Mandatory human finding triage complete — every required finding has a triage record.
+      D. All tasks in tasks.md complete — derive independently; do not trust a review assertion.
+      E. Test-plan entries evaluable — AUTOMATED: completed check + result; MECHANICAL: completed command + result; SEMANTIC: documented evaluation performed.
+      F. Degraded-review acknowledgement — when plan-review or code-review used degraded mode, disclosure and actual human acknowledgement must exist.
+      G. Review staleness assessed — plan-review and code-review assessed independently; a permitted explicit human override may waive the identified stale-review condition.
+
+      Non-waivable rule: An explicit review override MUST NOT substitute for code-review existence, task completion, mandatory finding triage, evaluable test-plan entries, or required degraded-mode acknowledgement. These prerequisites remain independent.
+
+      ## Prerequisite blocked versus FAIL
+
+      If any mandatory prerequisite is not satisfied:
+      - verification audit does NOT run;
+      - record the blocking prerequisite and gap in the prerequisites table;
+      - STOP;
+      - do NOT emit DECISION: FAIL.
+
+      A prerequisite block means verification could not validly begin.
+      DECISION: FAIL means verification actually ran and found a blocking audit problem.
+      Never collapse these two states.
+
+      ## Prerequisites Checked
+
+      Use the verify.md table. For each prerequisite record:
+      - Status: SATISFIED | BLOCKED
+      - Evidence
+      - Blocking Gap
+
+      If any mandatory prerequisite is BLOCKED: populate the evidence, STOP, and do NOT continue into the final audit decision production.
+
+      ## Reviewed state
+
+      When prerequisites permit the audit, record:
+      - Reviewed Revision (actual repository commit/revision evidence when available);
+      - Base Revision where useful;
+      - Reviewed Paths / Artifacts covering: proposal, specs, design, tasks, test-plan, code-review, implementation/source, tests, implementation-relevant configuration.
+
+      Use actual repository commit/revision evidence when available.
+      Timestamp may be recorded only as informational metadata.
+      Timestamp MUST NOT establish freshness.
+
+      ## Task-completion evidence
+
+      Independently derive from tasks.md and populate:
+      - Total Tasks;
+      - Completed Tasks;
+      - Incomplete Tasks;
+      - Evidence.
+
+      Do not copy an earlier review's assertion without checking.
+
+      ## Specification compliance audit
+
+      For every approved spec scenario, compare actual implementation/evidence against required behavior and populate:
+      - Spec Path;
+      - Requirement;
+      - Scenario;
+      - Result: SATISFIED | UNMET;
+      - Evidence/Finding.
+
+      If a required scenario is UNMET, record a blocking finding.
+      Do NOT silently edit a spec, weaken a requirement to make implementation pass, or treat code-review approval as proof of compliance.
+
+      ## Test-plan validation audit
+
+      Audit every required test-plan entry.
+
+      AUTOMATED — confirm the identified automated validation was actually executed, completed result exists, and result passes. A failing required AUTOMATED validation is a blocking audit issue.
+
+      MECHANICAL — confirm the command/check was actually performed, completed result exists, and result passes. A failing required MECHANICAL validation is a blocking audit issue.
+
+      SEMANTIC — confirm the documented evaluation actually exists, evaluator/evaluation evidence is present, and it is sufficient to assess the mapped behavior. Do not invent semantic evaluation. If semantic evidence establishes required behavior is unmet, record a blocking finding.
+
+      Evaluable does NOT mean passing: a completed failing validation is evaluable and allows the audit to run; the failure contributes to DECISION: FAIL.
+
+      ## Full test suite
+
+      When the repository has a meaningful applicable complete test-suite command, execute that suite during the verification audit. Do NOT treat an earlier historical run, code-review assertions, or stale CI evidence alone as a substitute for verification-time execution. Populate Command, Result, Evidence. Successful verification requires the applicable complete suite to pass. If the repository genuinely has no meaningful complete test-suite command, do NOT invent one; record explicitly that no applicable complete-suite command exists and record the rationale/evidence supporting that conclusion.
+
+      ## Behavioral coverage integrity
+
+      Check whether tests/validations were removed, weakened, skipped, or replaced in a way that reduces required behavioral coverage. Renames/moves/replacements/consolidation are acceptable if required behavioral coverage remains. A change in test file identity is not itself a violation. If behavioral coverage was reduced, a corresponding explicitly justified specification change must exist. Unauthorized behavioral coverage reduction is a blocking finding.
+
+      Populate Coverage Integrity fields.
+
+      ## Plan-review staleness lineage
+
+      Assess plan-review independently from code-review.
+
+      Reviewed inputs: proposal, specs, design. Determine whether these changed after the reviewed plan state.
+
+      Use REVISION_DIFF when repository revision/diff evidence adequately represents reviewed state. Use SEMANTIC_FALLBACK when clean revision evidence cannot represent the reviewed working tree. Do NOT use filesystem timestamps.
+
+      Record: reviewed revision, reviewed paths, changes after review, affected paths, MATERIAL | NON_MATERIAL, materiality rationale, assessment method, assessment evidence, Freshness Result: FRESH | STALE, Re-review Required: Yes | No.
+
+      Any material post-plan-review change affecting requirements, scope, architecture, acceptance criteria, or implementation assumptions makes plan-review STALE. This includes reviewer-requested material changes. Normal progression requires new plan-review unless a permitted explicit plan-review override covers that exact condition.
+
+      Non-material plan changes may avoid re-review only when the review artifact contains a clear non-material rationale. The verifier SHOULD assess that rationale semantically.
+
+      ## Plan-review override semantics
+
+      If plan-review is STALE and a permitted human override exists, record separately:
+      - Override Invoked: Yes;
+      - Condition Waived;
+      - Override Reason.
+
+      Freshness Result MUST remain STALE. The override is an exception to the gate; it does NOT make stale review fresh, does NOT mean changed inputs were reviewed, and does NOT imply independent review occurred.
+
+      If the override does not cover the actual stale condition: BLOCK.
+
+      ## Code-review staleness lineage
+
+      Assess code-review independently.
+
+      Reviewed inputs: source/implementation, tests, implementation-relevant configuration.
+
+      Use REVISION_DIFF where valid repository revision/diff evidence exists. Otherwise use SEMANTIC_FALLBACK with conservative semantic comparison.
+
+      Record: reviewed revision, reviewed paths, changes after review, affected paths, MATERIAL | NON_MATERIAL, rationale, assessment method, assessment evidence, Freshness Result: FRESH | STALE, Re-review Required: Yes | No, Accepted Finding Caused Material Change: Yes | No, Round Limit State.
+
+      Any material post-code-review change makes the prior code-review STALE. This includes material changes to implementation/source, tests, behavior-changing configuration, and accepted-finding fixes. A reviewer-requested fix does NOT remain covered merely because the reviewer requested it. If an accepted finding caused MATERIAL implementation change, the prior code-review is STALE. Normal progression requires a new code-review round subject to the existing two-round limit. At the round limit, preserve escalation state and do NOT invent Round 3.
+
+      ## Code-review NON_MATERIAL corrections
+
+      A post-review correction may avoid re-review only when demonstrably NON_MATERIAL, the code-review artifact contains clear materiality rationale, and the code-review artifact records why re-review is not required. The verifier must assess this justification semantically. Unsupported labels such as minor, small, trivial are insufficient by themselves.
+
+      ## Code-review override semantics
+
+      A permitted code-review override must record: explicit invocation, exact condition waived, mandatory reason, affected review state/inputs.
+
+      If the prior review is stale, Freshness Result remains STALE.
+      An override does NOT make it fresh, claim changed implementation was reviewed, establish independence, replace mandatory task completion, replace finding triage, or replace evaluable test-plan entries.
+
+      ## Review Overrides summary
+
+      Populate the verify template's Review Overrides section. For each relevant review record:
+      - Review;
+      - Condition Waived;
+      - Override Invoked;
+      - Reason;
+      - Freshness Result: FRESH | STALE.
+
+      Do NOT introduce OVERRIDDEN as a freshness result. Override state is separate from freshness.
+
+      ## Scope drift audit
+
+      Check implementation and delivered change for scope drift. Populate:
+      - Path/Area;
+      - Drift: NONE | DETECTED;
+      - Description;
+      - Impact: NON_BLOCKING | BLOCKING.
+
+      Blocking scope drift contributes to DECISION: FAIL. Non-blocking scope observations may become warnings.
+
+      ## Findings and warnings
+
+      Use stable IDs. For blocking audit findings use an appropriate stable identifier. For non-blocking warnings use W-001, W-002, etc. Populate:
+      - ID;
+      - Type: BLOCKING | WARNING;
+      - Area;
+      - Description;
+      - Evidence.
+
+      Any blocking finding forces FAIL. Warnings alone may produce PASS_WITH_WARNINGS. Do not fabricate warnings.
+
+      ## Final decision contract
+
+      Only after prerequisites permit the audit and the audit actually runs, emit exactly ONE:
+      DECISION: PASS
+      DECISION: PASS_WITH_WARNINGS
+      DECISION: FAIL
+
+      Never emit multiple active decisions.
+
+      PASS: every required verification check passes, no blocking findings exist, and ZERO non-blocking warnings exist. If any warning exists, PASS is not the correct decision. Archive MAY proceed.
+
+      PASS_WITH_WARNINGS: all required checks otherwise pass, no blocking finding exists, and one or more non-blocking warnings exist. This remains PASS_WITH_WARNINGS even after a later human accepts or defers those warnings. Human warning disposition affects archive eligibility only; it MUST NOT retroactively change PASS_WITH_WARNINGS to PASS. Warnings MUST be surfaced clearly. The artifact must preserve stable warning IDs for later human disposition. Do NOT silently interpret PASS_WITH_WARNINGS as PASS. Do NOT fabricate that human disposition during verify.
+
+      FAIL: verification actually ran AND one or more blocking audit issues exist — for example: unmet required spec scenario, failing required AUTOMATED validation, failing required MECHANICAL validation, semantic evidence shows requirement unmet, full applicable test suite fails, unauthorized behavioral coverage reduction, blocking scope drift. FAIL means audit failure, NOT prerequisite incompleteness. Archive must not normally proceed from FAIL. Do NOT implement archive override behavior here.
+
+      ## Decision metadata
+
+      Populate:
+      - Reviewed Revision;
+      - Decision Summary;
+      - Blocking Finding Count;
+      - Warning Count;
+      - Verification Evidence Paths.
+
+      Ensure the metadata describes the actual audited state.
+
+      ## Artifact-writing behavior
+
+      Populate the approved verify template (verify.md).
+      The instruction defines behavior and transition semantics; the template owns the artifact shape.
+      Do not duplicate the entire template inside schema.yaml.
     requires:
       - code-review
 
