@@ -307,6 +307,7 @@ artifacts:
       Normal progression is blocked.
       Planning artifacts must normally be revised and reviewed again.
       Human override is possible only through explicit STATUS: OVERRIDDEN with mandatory reason.
+      The reviewer MUST NOT fabricate the override or reason.
 
       ## Required Changes materiality
 
@@ -314,6 +315,16 @@ artifacts:
       After MATERIAL Required Changes are applied, normal progression requires a new plan-review round.
       Exception: human may record STATUS: OVERRIDDEN with mandatory reason identifying the waived re-review condition.
       The override is an explicit exception; it does NOT make the previous review fresh.
+
+      When an override is used, the review artifact MUST record in its Re-review / Override Evidence section:
+      - each affected reviewed input path;
+      - a concise description of the change to that input;
+      - Re-review Waived: Yes;
+      - the mandatory override/waiver reason identifying the re-review condition being waived.
+
+      The prior review remains STALE for changed inputs.
+      The override does NOT make it fresh.
+      The override does NOT mean the changed plan was reviewed.
 
       NON_MATERIAL: editorial correction only, does NOT change requirements, scope, architecture, acceptance criteria, or implementation assumptions.
       If all Required Changes are applied and demonstrably NON_MATERIAL, the human MAY record STATUS: ACCEPTED without re-review.
@@ -335,12 +346,15 @@ artifacts:
         Prior review is stale for changed inputs.
         Normal progression: new plan-review round required.
         Alternative: explicit human STATUS: OVERRIDDEN with mandatory reason.
+        Override evidence: affected inputs, change description, Re-review Waived: Yes, waived condition.
 
       Case E — REVISE:
         Normal progression BLOCKED. Artifacts normally revised and re-reviewed.
 
       Case F — REVISE + human override:
-        Human records STATUS: OVERRIDDEN with mandatory reason.
+        Human MAY explicitly record STATUS: OVERRIDDEN with mandatory reason.
+        This recorded exception MAY permit downstream planning, subject to all other Goulart gates.
+        The reviewer MUST NOT fabricate the override or reason.
 
       Case G — human chooses revision:
         Human records STATUS: REVISE with reason. Artifacts revised and re-reviewed.
