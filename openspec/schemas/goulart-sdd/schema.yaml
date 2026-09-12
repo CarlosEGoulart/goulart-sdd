@@ -871,7 +871,7 @@ artifacts:
 
       ## Full test suite
 
-      Where the repository has an applicable complete test-suite command, run or evaluate the full suite. Populate Command, Result, Evidence. Successful final verification requires the full applicable test suite to pass. If no meaningful full-suite command exists, do NOT invent one and record truthful evidence/rationale appropriate to the repository.
+      When the repository has a meaningful applicable complete test-suite command, execute that suite during the verification audit. Do NOT treat an earlier historical run, code-review assertions, or stale CI evidence alone as a substitute for verification-time execution. Populate Command, Result, Evidence. Successful verification requires the applicable complete suite to pass. If the repository genuinely has no meaningful complete test-suite command, do NOT invent one; record explicitly that no applicable complete-suite command exists and record the rationale/evidence supporting that conclusion.
 
       ## Behavioral coverage integrity
 
@@ -968,9 +968,9 @@ artifacts:
 
       Never emit multiple active decisions.
 
-      PASS: all required audit checks pass, no blocking findings exist, no unresolved warnings requiring human disposition. Archive MAY proceed.
+      PASS: every required verification check passes, no blocking findings exist, and ZERO non-blocking warnings exist. If any warning exists, PASS is not the correct decision. Archive MAY proceed.
 
-      PASS_WITH_WARNINGS: required verification checks pass, no blocking finding exists, one or more non-blocking warnings exist. Warnings MUST be surfaced clearly. The artifact must preserve stable warning IDs for later human disposition. Do NOT silently interpret PASS_WITH_WARNINGS as PASS. Archive progression later requires explicit human warning disposition under the archive workflow. Do NOT fabricate that human disposition during verify.
+      PASS_WITH_WARNINGS: all required checks otherwise pass, no blocking finding exists, and one or more non-blocking warnings exist. This remains PASS_WITH_WARNINGS even after a later human accepts or defers those warnings. Human warning disposition affects archive eligibility only; it MUST NOT retroactively change PASS_WITH_WARNINGS to PASS. Warnings MUST be surfaced clearly. The artifact must preserve stable warning IDs for later human disposition. Do NOT silently interpret PASS_WITH_WARNINGS as PASS. Do NOT fabricate that human disposition during verify.
 
       FAIL: verification actually ran AND one or more blocking audit issues exist — for example: unmet required spec scenario, failing required AUTOMATED validation, failing required MECHANICAL validation, semantic evidence shows requirement unmet, full applicable test suite fails, unauthorized behavioral coverage reduction, blocking scope drift. FAIL means audit failure, NOT prerequisite incompleteness. Archive must not normally proceed from FAIL. Do NOT implement archive override behavior here.
 
