@@ -593,7 +593,7 @@ artifacts:
       Guidelines:
       - Group related tasks under ## numbered headings
       - Each task MUST be a checkbox: `- [ ] X.Y Task description`
-      - Tasks should be small enough to complete in one session
+      - Each implementation task MUST be small/focused enough to complete in one coding-agent session
       - Order tasks by dependency (what must be done first?)
       - Each task MUST state how to verify completion (a test, command,
         observable behavior, or delivered artifact). Put the verification in
@@ -654,11 +654,21 @@ artifacts:
 
       ## Task traceability
 
-      Where applicable, each implementation task should map primarily to one
-      approved spec scenario or one test-plan entry. Reference the relevant
-      scenario and TP-* entry in the task description when practical. Do NOT
-      create giant tasks spanning unrelated scenarios. Do NOT duplicate one
-      behavior into unnecessary tasks merely to inflate task count.
+      Every focused implementation task MUST map to exactly one primary:
+
+      - approved acceptance criterion / spec scenario; OR
+      - test-plan entry.
+
+      When practical, include both the relevant scenario identity and TP-* entry
+      when they represent the same focused behavior. The purpose is to keep
+      each task bounded and traceable. Do NOT allow unrelated scenarios in one
+      implementation task. Do NOT create duplicate tasks merely to inflate
+      count. Do NOT require artificial mappings that invent requirements.
+
+      A separate verification task may exist only when it checks broader
+      integration or system behavior spanning multiple implementation tasks.
+      That broader verification task is not an excuse to make implementation
+      tasks unbounded.
 
       ## Spec drift
 
@@ -701,7 +711,6 @@ artifacts:
     requires:
       - test-plan
       - design
-      - plan-review
       - plan-review
 
   - id: code-review
