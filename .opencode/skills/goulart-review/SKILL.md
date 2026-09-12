@@ -188,7 +188,9 @@ Both stages share these invariants:
 Stage-specific override evidence contracts are in:
 
 - **PLAN**: section 16 (plan materiality) and section 17 (plan verdict/disposition matrix).
-- **CODE**: section 25 (code materiality) and section 22 (code verdicts).
+- **CODE**: section 24 (code-review Required Changes and override contract), section 25 (code materiality), and section 26 (code-review verdict/triage matrix).
+
+The rule that REJECT/DEFER is NOT itself an override is a CODE-review rule. REJECT/DEFER of a finding does not waive an unresolved blocking/Critical condition unless an explicit override records the waived condition.
 
 If override evidence is incomplete for the relevant stage, report it as incomplete. Do NOT fabricate missing values.
 
@@ -459,7 +461,7 @@ A finding may validly be:
 |---|---|---|
 | No | No | May coexist with APPROVE if no other finding requires a change |
 | Yes | No | Forces APPROVE_WITH_CHANGES (unless Critical forces REVISE) |
-| No | Yes | Normal progression blocked; verdict must be APPROVE_WITH_CHANGES or REVISE |
+| No | Yes | Normal progression blocked; REVISE while unresolved (do NOT classify as APPROVE_WITH_CHANGES since no implementation change is required) |
 | Yes | Yes | Forces APPROVE_WITH_CHANGES or REVISE (Critical forces REVISE) |
 
 ### Clean review (findings = 0)
@@ -478,7 +480,7 @@ Every actual finding still requires human triage. Do not treat APPROVE as "findi
 
 ### APPROVE_WITH_CHANGES
 
-Use when ANY finding has Requires Implementation Change = Yes, without a Critical condition forcing REVISE.
+Use when at least one finding has Requires Implementation Change = Yes, without a Critical condition forcing REVISE. A finding with Blocking Condition = Yes but Requires Implementation Change = No does NOT make APPROVE_WITH_CHANGES appropriate — use REVISE for that case.
 
 Human triage is required. Accepted/required implementation changes must be addressed before verification.
 
@@ -565,7 +567,8 @@ Do not call stale review fresh because a human override exists.
 | Findings exist, ALL have Requires Change = No, no blocking/Critical | APPROVE may be valid; triage required. |
 | ANY finding has Requires Change = Yes, no Critical | APPROVE_WITH_CHANGES; triage required. |
 | ANY Critical finding | REVISE. Triage does not resolve Critical. |
-| Unresolved Blocking Condition | Normal progression blocked. |
+| Unresolved Blocking Condition, ANY Requires Change = Yes | APPROVE_WITH_CHANGES or REVISE; triage required. |
+| Unresolved Blocking Condition, ALL Requires Change = No | REVISE while unresolved; do NOT classify as APPROVE_WITH_CHANGES. |
 | REVISE + exact permitted OVERRIDDEN | May proceed under override rules. |
 
 ---
