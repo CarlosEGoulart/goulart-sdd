@@ -58,6 +58,7 @@ Do NOT infer `plan` merely because plan-review is missing.
 4. Resolve the change: use an explicitly named existing change, or an unambiguous existing change identified in conversation. Otherwise run `openspec list --json`. With multiple candidates, ASK. Do not choose by timestamp.
 5. Run `openspec status --change "<name>" --json` without a schema override. Use `planningHome`, `changeRoot`, `artifactPaths`, and `actionContext` as authoritative paths/scope.
 6. Confirm schema compatibility: it must support proposal, specs, design, plan-review, test-plan, tasks, code-review and verify. If incompatible, STOP and report.
+7. When writing the review artifact, use the resolved paths from `artifactPaths` (e.g., `artifactPaths.plan-review.resolvedOutputPath` for plan stage, `artifactPaths.code-review.resolvedOutputPath` for code stage). Do not hardcode repository-relative paths when the CLI resolves a store or alternate planning home.
 
 ## 4. Independence hierarchy
 
@@ -176,24 +177,20 @@ When a previous review of the same stage exists, compare its recorded reviewed s
 
 ## 11. Shared override rules
 
-Override is HUMAN-owned.
+Override is HUMAN-owned for both stages.
 
-It must record:
+Both stages share these invariants:
 
-- Override Invoked: Yes
-- exact Waived Condition
-- mandatory Override Reason
-- Affected Review State / Inputs
+- An override does NOT make stale review fresh.
+- An override does NOT mean changed inputs/implementation were reviewed.
+- An override does NOT arise implicitly from REJECT/DEFER.
 
-An override:
+Stage-specific override evidence contracts are in:
 
-- does NOT make stale review fresh
-- does NOT mean changed inputs were reviewed
-- does NOT replace task completion (code stage)
-- does NOT replace mandatory finding triage (code stage)
-- does NOT arise implicitly from REJECT/DEFER (code stage)
+- **PLAN**: section 16 (plan materiality) and section 17 (plan verdict/disposition matrix).
+- **CODE**: section 25 (code materiality) and section 22 (code verdicts).
 
-If override evidence is incomplete, report it as incomplete. Do NOT fabricate missing values.
+If override evidence is incomplete for the relevant stage, report it as incomplete. Do NOT fabricate missing values.
 
 ---
 
@@ -289,21 +286,70 @@ Leave current-round human disposition pending unless it was explicitly and actua
 
 Never infer a human disposition from "looks good", a reviewer APPROVE, absence of complaints, or a model decision.
 
+### Plan human disposition validation
+
+**STATUS: ACCEPTED**
+
+- Human-owned.
+- Reason optional for normal APPROVE + ACCEPTED.
+- For APPROVE_WITH_CHANGES + ACCEPTED: NON_MATERIAL justification required in the artifact.
+
+**STATUS: REVISE**
+
+- Human-owned.
+- Human Reason is MANDATORY.
+- Missing or blank Human Reason means the human disposition evidence is incomplete.
+- Report the missing reason; normal progression remains blocked.
+- Do NOT silently accept a REVISE disposition without Human Reason as a fully valid recorded decision.
+
+**STATUS: OVERRIDDEN**
+
+- Human-owned.
+- Human Reason is MANDATORY.
+- Exact waived/overridden condition must be identifiable from the recorded reason/evidence.
+- Applicable override evidence must be complete per the plan override contract in section 16.
+
 After producing the review: STOP. Report the exact human action now required.
 
-## 16. Plan materiality
+## 16. Plan materiality and plan override contract
 
 **MATERIAL** means a correction affects requirements, scope, architecture, acceptance criteria, or implementation assumptions.
 
 Applied MATERIAL corrections make the previous review stale. Normal progression requires another independent plan-review round.
 
-Exception: human may explicitly record STATUS: OVERRIDDEN with mandatory reason. Such override must identify: exact waived re-review condition, affected reviewed input path(s), concise changed-input description, Re-review Waived: Yes, mandatory waiver/override reason.
+Exception: human may explicitly record STATUS: OVERRIDDEN with mandatory reason.
 
 Override != fresh. Override != reviewed changed plan.
 
 **NON_MATERIAL** means truly editorial/non-semantic correction.
 
 If all Required Changes are applied and demonstrably NON_MATERIAL, then human MAY record ACCEPTED without another review. Materiality rationale is mandatory. Do not infer missing rationale.
+
+### Plan override contract
+
+When the human records STATUS: OVERRIDDEN, require:
+
+- Human Reason: mandatory — must identify the exact review condition being overridden/waived.
+- For material changed inputs / waived re-review:
+  - Affected Inputs: list each affected reviewed input path.
+  - Change Description: concise description of the change to each input.
+  - Re-review Waived: Yes.
+  - Waiver Reason: mandatory — identifies the waived re-review condition.
+
+Use the plan-review template fields:
+
+- Human Decision → STATUS: OVERRIDDEN
+- Human Reason
+- Re-review / Override Evidence → Affected Inputs, Re-review Waived, Waiver Reason
+
+Do NOT require a plan field named "Override Invoked" — that is a code-review template field.
+
+Plan override does NOT:
+
+- make STALE → FRESH;
+- mean changed planning inputs were reviewed;
+- replace unapplied Required Changes;
+- replace degraded-review acknowledgement.
 
 ## 17. Plan verdict/disposition matrix
 
@@ -312,13 +358,14 @@ Every permitting row still requires all other gates to pass.
 | Actual review/human state | Outcome |
 |---|---|
 | Missing/pending/ambiguous verdict or human STATUS | STOP; identify the missing/ambiguous field. |
-| Human STATUS: REVISE, with any verdict | STOP; human requests revision. |
+| Human STATUS: REVISE without Human Reason | STOP; report incomplete human decision evidence. |
+| Human STATUS: REVISE with mandatory reason | STOP; human requests revision. |
 | APPROVE + ACCEPTED + current review | Permit if all other gates pass. |
 | APPROVE_WITH_CHANGES + any unapplied RC | STOP; list every unapplied RC. |
 | APPROVE_WITH_CHANGES + all RCs applied, NON_MATERIAL, recorded rationale + ACCEPTED | May permit without re-review. |
 | APPROVE_WITH_CHANGES + applied MATERIAL RC, no current review or exact override | Prior review STALE; STOP for re-review or escalation. |
 | Applied MATERIAL correction + later current review | Evaluate that current round normally. |
-| Applied MATERIAL correction + exact permitted OVERRIDDEN | May permit only under override rules; prior review remains STALE. |
+| Applied MATERIAL correction + exact permitted OVERRIDDEN with mandatory reason | May permit only under override rules; prior review remains STALE. |
 | REVISE without exact permitted OVERRIDDEN | STOP; normally revise and obtain re-review. |
 | REVISE + exact permitted OVERRIDDEN with mandatory reason | May permit; disclose the exception. |
 
@@ -394,6 +441,27 @@ Any Critical finding MUST force VERDICT: REVISE. An unresolved Critical conditio
 
 Emit EXACTLY ONE: APPROVE | APPROVE_WITH_CHANGES | REVISE.
 
+The verdict is determined by the substantive state of findings:
+
+| State | Verdict |
+|---|---|
+| Findings = 0 | APPROVE (no triage required) |
+| Findings exist, ALL findings have Requires Implementation Change = No, AND no blocking/Critical condition | APPROVE (triage required for each finding) |
+| ANY finding has Requires Implementation Change = Yes, AND no Critical / stronger REVISE condition | APPROVE_WITH_CHANGES (triage required) |
+| ANY Critical finding | REVISE |
+| Unresolved Blocking Condition | Normal progression blocked regardless of triage |
+
+**IMPORTANT**: Requires Implementation Change and Blocking Condition are INDEPENDENT.
+
+A finding may validly be:
+
+| Requires Implementation Change | Blocking Condition | Verdict effect |
+|---|---|---|
+| No | No | May coexist with APPROVE if no other finding requires a change |
+| Yes | No | Forces APPROVE_WITH_CHANGES (unless Critical forces REVISE) |
+| No | Yes | Normal progression blocked; verdict must be APPROVE_WITH_CHANGES or REVISE |
+| Yes | Yes | Forces APPROVE_WITH_CHANGES or REVISE (Critical forces REVISE) |
+
 ### Clean review (findings = 0)
 
 VERDICT: APPROVE.
@@ -404,11 +472,13 @@ If degraded mode was used, its human acknowledgement requirement remains separat
 
 ### APPROVE with non-blocking findings
 
-APPROVE may contain findings when no blocking implementation change is required. Every actual finding still requires human triage. Do not treat APPROVE as "findings can be ignored".
+APPROVE is permitted only when every finding has Requires Implementation Change = No and no blocking/Critical condition exists.
+
+Every actual finding still requires human triage. Do not treat APPROVE as "findings can be ignored".
 
 ### APPROVE_WITH_CHANGES
 
-Use when at least one implementation change is required before verification, without a Critical condition forcing REVISE.
+Use when ANY finding has Requires Implementation Change = Yes, without a Critical condition forcing REVISE.
 
 Human triage is required. Accepted/required implementation changes must be addressed before verification.
 
@@ -418,7 +488,7 @@ Normal progression to verify is blocked. Implementation must normally be revised
 
 Any Critical finding forces REVISE.
 
-Explicit human override may exist only with: Override Invoked: Yes, exact Waived Condition, mandatory Override Reason, affected review state/inputs.
+Explicit human override may exist only with code-review override fields: Override Invoked: Yes, exact Waived Condition, mandatory Override Reason, affected review state/inputs.
 
 Reviewer must NOT fabricate override.
 
@@ -442,7 +512,7 @@ If an unresolved blocking/Critical condition remains, normal progression remains
 
 REJECT/DEFER is NOT itself an override. Record the actual disposition and follow-up without silently treating a rejected/deferred change as applied.
 
-## 24. Code-review Required Changes
+## 24. Code-review Required Changes and override contract
 
 For APPROVE_WITH_CHANGES or REVISE, use the template's RC-* records where implementation changes are required.
 
@@ -451,6 +521,31 @@ Link them to relevant finding IDs.
 Record: requested implementation change, Applied state, affected paths/revision where available, Materiality, Materiality Rationale.
 
 Do not claim a fix is applied unless repository evidence proves it. Reviewer never applies the fix.
+
+### Code-review override contract
+
+When the human explicitly overrides a code-review condition, use the code-review template's Explicit Human Override section:
+
+- Override Invoked: Yes
+- Waived Condition: the exact review condition being waived
+- Override Reason: mandatory human reason
+- Affected Review State / Inputs: what review state is affected
+
+Code override does NOT:
+
+- make stale review fresh;
+- mean changed implementation was reviewed;
+- establish independent review;
+- arise implicitly from REJECT/DEFER.
+
+**Non-waivable prerequisites** — a code-review override MUST NOT substitute for:
+
+- task completion (all tasks in tasks.md must be checked);
+- mandatory finding triage (every finding must have ACCEPT/REJECT/DEFER disposition);
+- evaluable test-plan entries (AUTOMATED/MECHANICAL completed, SEMANTIC documented);
+- degraded-review acknowledgement when applicable.
+
+These remain independent prerequisites. Override only waives the exact permitted review condition actually named by the human.
 
 ## 25. Code-review materiality
 
@@ -467,9 +562,9 @@ Do not call stale review fresh because a human override exists.
 | Actual state | Outcome |
 |---|---|
 | Findings = 0 | APPROVE. No triage or general approval required. |
-| Findings exist, all non-blocking, triage complete | APPROVE may be valid. |
-| At least one implementation change required, no Critical | APPROVE_WITH_CHANGES may be appropriate. Triage required. |
-| Any Critical finding | REVISE. Triage does not resolve Critical. |
+| Findings exist, ALL have Requires Change = No, no blocking/Critical | APPROVE may be valid; triage required. |
+| ANY finding has Requires Change = Yes, no Critical | APPROVE_WITH_CHANGES; triage required. |
+| ANY Critical finding | REVISE. Triage does not resolve Critical. |
 | Unresolved Blocking Condition | Normal progression blocked. |
 | REVISE + exact permitted OVERRIDDEN | May proceed under override rules. |
 
@@ -507,13 +602,15 @@ Do not create both review artifacts in one invocation.
 Never fabricate:
 
 - plan STATUS (ACCEPTED/REVISE/OVERRIDDEN)
-- Human Reason
+- plan Human Reason (mandatory for REVISE and OVERRIDDEN)
+- plan Re-review / Override Evidence (affected inputs, waived condition)
 - degraded human acknowledgement
 - code finding triage (ACCEPT/REJECT/DEFER)
-- REJECT/DEFER justification
-- override invocation
-- override reason
-- waived condition
+- code REJECT/DEFER justification
+- code Override Invoked
+- code Override Reason
+- code Waived Condition
+- code Affected Review State / Inputs
 - human escalation resolution
 
 Template placeholders must not be mistaken for recorded human decisions. If human action has not occurred, leave it pending/unrecorded.
