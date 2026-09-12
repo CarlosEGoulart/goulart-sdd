@@ -625,7 +625,159 @@ artifacts:
     description: Post-implementation code review gate
     template: code-review.md
     instruction: |
-      Create the code review artifact. This is a placeholder for the full code-review instruction (Task 3.3).
+      Review the completed implementation adversarially and produce/update code-review.md using the approved code-review template.
+
+      ## Stage precondition and reviewer mission
+
+      Code-review occurs after all implementation tasks are complete and before final verification.
+      Before performing a normal review, inspect tasks.md and confirm all implementation tasks are complete.
+      If any task is incomplete, STOP, report that code-review is premature and identify the incomplete tasks. Do NOT emit a permitting review verdict.
+      Artifact dependency existence alone does not prove implementation completion.
+
+      Read the applicable specs, design.md, tasks.md, test-plan.md, implementation/source changes, tests, relevant configuration, and other repository evidence needed to evaluate the change.
+      Evaluate against the approved proposal/spec/design contract; consult proposal.md for scope where needed.
+      During review, write findings and Required Changes to code-review.md rather than silently implementing source/test/config fixes.
+      Do NOT rewrite specs to make the implementation appear compliant. Implementation fixes are separate work and can invalidate the review.
+
+      ## Independent review and fallback hierarchy
+
+      Use this hierarchy in order:
+      1. Harness-supplied separate/fresh context — preferred.
+      2. User-managed separate clean session — fallback, still independent.
+      3. Degraded review in the same/non-separate context — last resort only.
+
+      Independent review requires a context/session separate from the implementer context.
+      Cross-model review is optional; a different model is not required, and a different model alone does NOT establish independence.
+      If the harness cannot supply separate context but the user can open a clean separate session, hand off to that session for independent review.
+      Degraded review is allowed ONLY when both fresh-context options are unavailable.
+      Disclose the degraded limitation in the artifact and never call this review independent.
+      Human acknowledgement of degraded mode is independently required before downstream progression, including for a clean review.
+      Never fabricate acknowledgement; leave it pending until it actually occurs.
+
+      ## Reviewed implementation evidence
+
+      Populate the existing template fields for what was actually reviewed:
+      - Review Mode: Independent | Degraded;
+      - Reviewer Context/Session;
+      - ROUND: 1 | 2 and Previous Round Outcome for Round 2;
+      - Reviewed Revision and optional Base Revision;
+      - Reviewed Paths, Test Paths, and Additional Evidence Paths where relevant.
+
+      Use repository revision/diff and path evidence where available, with conservative semantic comparison when revision evidence cannot represent the reviewed working tree.
+      Review Timestamp is informational only. Neither repository nor filesystem timestamps establish freshness; assess reviewed revisions/paths and the semantic impact of changes.
+
+      ## Evaluation scope
+
+      Assess every applicable area in Review Coverage:
+      - Implementation vs specs;
+      - Implementation vs design;
+      - Scope compliance;
+      - Test quality;
+      - Behavioral coverage;
+      - Code quality;
+      - Maintainability;
+      - Architecture;
+      - Unnecessary complexity;
+      - Potential regressions.
+
+      For each area record Pass | Concern | Not Applicable and sufficient Evidence/Notes to explain the result.
+      Do not use Not Applicable to avoid review work.
+      Compare observable implementation behavior against approved spec scenarios. Record omitted, contradicted, weakened, or out-of-scope behavior as findings.
+      Flag behavior or architecture beyond approved scope as scope creep. Do not invent product requirements merely because another approach is preferred.
+
+      ## Findings and blocking state
+
+      For each real finding use a stable F-* ID (F-001, F-002, etc.) and exactly one of each:
+      - Severity: Critical | Moderate | Suggestion;
+      - Category: compliance | quality | feasibility | scope | risk.
+
+      Record Description, Evidence/Context, Affected Path/Component, Requires Implementation Change: Yes | No, and Blocking Condition: Yes | No.
+      Requires Implementation Change and Blocking Condition are independent: a correction may be non-blocking. Never infer blocking solely from a required implementation change.
+      Blocking Condition: Yes prevents normal progression until resolved or an explicitly permitted human override records the waived condition and reason.
+      Any Critical finding MUST force VERDICT: REVISE, never APPROVE or APPROVE_WITH_CHANGES. An unresolved Critical condition remains blocking regardless of triage.
+      Keep the Finding Summary consistent with the findings. Do not fabricate findings to fill placeholders; with zero findings, record a clean review.
+
+      ## Per-finding human triage
+
+      If findings exist, the HUMAN must triage each as exactly one of ACCEPT | REJECT | DEFER.
+      Populate Per-Finding Human Triage and its summary only from actual human decisions; leave dispositions Pending until recorded. The reviewer MUST NOT fabricate triage or justification.
+      - ACCEPT: justification optional. If an implementation change is required, it must be addressed before verify. ACCEPT alone does NOT resolve a blocking condition.
+      - REJECT: justification REQUIRED. Rejection does NOT automatically waive blocking or Critical conditions.
+      - DEFER: justification REQUIRED. Deferral does NOT automatically waive blocking or Critical conditions.
+
+      REJECT or DEFER without justification is invalid/incomplete triage. All mandatory triage must be complete before normal progression.
+      A justified REJECT/DEFER of a non-blocking finding may allow normal progression when no unresolved blocking/Critical condition or other gate remains.
+      If blocking/Critical state remains, normal progression stays BLOCKED; unresolved Critical findings still force REVISE.
+      REJECT/DEFER is NOT itself an override. Record the actual disposition and follow-up in the artifact without silently treating a rejected/deferred change as applied.
+
+      ## Verdict transitions
+
+      Emit exactly ONE active verdict: APPROVE | APPROVE_WITH_CHANGES | REVISE.
+
+      APPROVE means no blocking implementation changes are required:
+      - Clean review: zero findings SHALL yield APPROVE. No triage or additional unconditional human approval is required; the verdict stands as-is.
+      - Non-blocking findings, including Moderate or Suggestion findings, may coexist with APPROVE, but each requires human triage.
+      - After required triage, verification may proceed only if no unresolved blocking condition or unapplied accepted/required change remains, no material implementation change invalidates the review, and later verification prerequisites are met.
+      - Do NOT introduce a generic ACCEPTED gate or human approval field like plan-review. Degraded-mode acknowledgement remains separately required.
+
+      APPROVE_WITH_CHANGES means at least one implementation change is required before verification, subject to explicit human triage:
+      - Connect each required fix to findings in Required Changes using stable RC-* IDs.
+      - Record Related Finding(s), Requested Implementation Change, Applied: Yes | No, Affected Paths/Revision, Materiality: MATERIAL | NON_MATERIAL, and Materiality Rationale.
+      - All findings must be triaged. Unapplied accepted/required changes block normal progression.
+      - Justified REJECT/DEFER follows the triage rules above; it permits progression only when no unresolved blocking/Critical condition or other required action remains.
+      - Applied MATERIAL corrections make the prior review stale and require a new round normally. Demonstrably NON_MATERIAL corrections may avoid re-review only with recorded justification.
+
+      REVISE blocks normal progression to verify:
+      - Use when implementation must be revised and reviewed again, any Critical finding exists, or substantive blocking state requires another review.
+      - Normal path: revise implementation, then perform a new code-review round within the two-round limit.
+      - A human MAY explicitly waive a review condition through the Explicit Human Override section with mandatory reason. This is an exception subject to other gates, not a replacement verdict or a claim of freshness.
+
+      ## Materiality and re-review evidence
+
+      A post-review change is MATERIAL when it changes the substance of the reviewed implementation: implementation/external behavior, architecture, materially relevant tests or coverage, or behavior-changing configuration.
+      This includes MATERIAL fixes for ACCEPTED findings and changes requested by the reviewer itself.
+      Such changes make the prior code-review STALE for the changed implementation. Normal progression requires another code-review round; the old review does not cover the changed implementation.
+
+      For implementation changes after review, populate Review Staleness / Re-review Evidence:
+      - Implementation Changes After Review: Yes;
+      - Changed Paths: each path, change description, and resulting revision where available;
+      - Staleness Classification: MATERIAL | NON_MATERIAL;
+      - Materiality Rationale;
+      - Re-review Required: Yes | No;
+      - Re-review Justification.
+
+      MATERIAL requires Re-review Required: Yes for normal progression. A permitted waiver is recorded separately, without changing the stale state or hiding the normal re-review requirement.
+      NON_MATERIAL may use Re-review Required: No ONLY with explicit Materiality Rationale and Re-review Justification explaining why the correction does not materially change the reviewed implementation.
+      Record changed paths/revision even for NON_MATERIAL corrections. Unsupported labels such as minor, small, or editorial are not sufficient reasoning.
+      An unchanged implementation does not become stale merely with time; record Implementation Changes After Review: No when supported by the evidence.
+
+      ## Explicit Human Override
+
+      Use this existing section only when the human actually chooses a permitted review exception. Record:
+      - Override Invoked: Yes;
+      - Waived Condition: the exact review condition being waived;
+      - Override Reason: mandatory human reason;
+      - Affected Review State / Inputs: the affected review state and implementation inputs.
+
+      The reviewer MUST NOT fabricate the override or reason, or infer an override from REJECT/DEFER.
+      An override does NOT make a stale review fresh, imply the changed implementation was reviewed, or establish independent review.
+      It MUST NOT substitute for implementation task completion, required finding triage, or evaluable test-plan entries. These prerequisites remain independent.
+      Record only the explicitly permitted exception; later verification still owns its prerequisite audit and final result.
+
+      ## Two-round persistence and escalation
+
+      Maximum 2 code-review/revision rounds. Use ROUND: 1 | 2.
+      Round 1 is the initial review. Round 2 follows Round 1 for REVISE, MATERIAL APPROVE_WITH_CHANGES corrections, or another material implementation change requiring review.
+      In Round 2, retain concise Previous Round Outcome in the SAME artifact: prior verdict, findings summary, actual human triage dispositions, and why Round 2 occurred.
+      Preserve history rather than overwriting it without evidence of the previous round.
+
+      The limit includes all required re-reviews, including APPROVE_WITH_CHANGES material corrections and other material implementation changes.
+      After Round 2, unresolved blocking conditions, unresolved required changes, or another material change requiring further review MUST cause STOP and human escalation.
+      Populate Escalation Evidence: Escalation Required: Yes, Escalation Reason, and Unresolved Conditions with a concise summary referencing findings/changes.
+      Do NOT automatically start Round 3, reset ROUND to 1, erase previous-round history, or invent a human resolution after escalation.
+      If Round 2 resolves all blocking/required state and no material new changes invalidate it, normal progression may continue under the verdict/triage rules and later verification gates.
+
+      Populate the approved template's relevant fields; the template owns the artifact shape. Code-review records review readiness for verification, not the final whole-change verification result or adapter execution logic.
     requires:
       - tasks
 
