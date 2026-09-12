@@ -66,11 +66,11 @@
 
 These are lightweight adapter/schema smoke checks; documented manual evaluation is acceptable where automation is impractical. No complete fake application is required. Validate populated planning artifacts rather than treating a newly created empty change as a valid completed plan.
 
-- [ ] 11.1 Create a test change using the `goulart-sdd` schema (`openspec new change "dogfood-test" --schema goulart-sdd`) and verify the change directory is created with the correct schema
-- [ ] 11.2 Verify that the test change's `.openspec.yaml` references the `goulart-sdd` schema and that `openspec status` shows all expected artifacts (proposal, specs, design, plan-review, test-plan, tasks, code-review, verify)
-- [ ] 11.3 Smoke test planning gate: run `goulart-plan` on the test change, verify it creates proposal/specs/design and stops before plan-review/test-plan/tasks
-- [ ] 11.4 Smoke test apply gate: on a temporary change without valid plan-review/human acceptance, verify `goulart-apply` refuses implementation
-- [ ] 11.5 Smoke test archive gate: on a temporary change without valid verify state, verify `goulart-archive` refuses archive delegation
-- [ ] 11.6 Smoke test planning continuation: prepare a valid plan-review with permitted human acceptance after the initial planning stop; invoke goulart-plan again and verify it creates/continues test-plan and tasks, reports planning complete, STOPs, and identifies goulart-apply as the next step without executing it
-- [ ] 11.7 After planning smoke checks populate the test change, run `openspec validate dogfood-test` and confirm no blocking errors, recording any warnings
-- [ ] 11.8 Clean up temporary dogfood change directories after verification
+- [x] 11.1 Create a test change using the `goulart-sdd` schema (`openspec new change "dogfood-test" --schema goulart-sdd`) and verify the change directory is created with the correct schema
+- [x] 11.2 Verify that the test change's `.openspec.yaml` references the `goulart-sdd` schema and that `openspec status` shows all expected artifacts (proposal, specs, design, plan-review, test-plan, tasks, code-review, verify)
+- [x] 11.3 Smoke test planning gate: run `goulart-plan` on the test change, verify it creates proposal/specs/design and stops before plan-review/test-plan/tasks
+- [x] 11.4 Smoke test apply gate: on a temporary change without valid plan-review/human acceptance, verify `goulart-apply` refuses implementation
+- [x] 11.5 Smoke test archive gate: on a temporary change without valid verify state, verify `goulart-archive` refuses archive delegation
+- [x] 11.6 Smoke test planning continuation: prepare a valid plan-review with permitted human acceptance after the initial planning stop; invoke goulart-plan again and verify it creates/continues test-plan and tasks, reports planning complete, STOPs, and identifies goulart-apply as the next step without executing it
+- [x] 11.7 After planning smoke checks populate the test change, run `openspec validate dogfood-test` and confirm no blocking errors, recording any warnings
+- [x] 11.8 Clean up temporary dogfood change directories after verification
