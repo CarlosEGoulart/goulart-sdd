@@ -186,7 +186,225 @@ artifacts:
     description: Pre-implementation plan review and human approval gate
     template: plan-review.md
     instruction: |
-      Create the plan review artifact. This is a placeholder for the full plan-review instruction (Task 3.1).
+      Review the plan (proposal.md, all change specs, and design.md) and produce plan-review.md.
+
+      ## Reviewer mission
+
+      The reviewer evaluates the plan adversarially, not as a summary.
+      Read proposal.md, all applicable change specs, design.md, and any additional repository context needed to assess the plan.
+
+      Read-only posture:
+      - The reviewer SHALL NOT modify proposal.md, specs/, or design.md.
+      - The reviewer's ONLY permitted write is plan-review.md.
+      - If a problem is found, record a finding or Required Change.
+      - Do NOT silently fix the reviewed artifacts.
+
+      ## Independent review and fallback hierarchy
+
+      Use this hierarchy in order:
+      1. Harness-supplied separate/fresh context — preferred.
+      2. User-managed separate clean session — fallback, still independent.
+      3. Degraded review in the same/non-separate context — last resort only.
+
+      Rules:
+      - Independent review requires a context/session separate from the author/implementer.
+      - Cross-model review is optional and NOT required for independence.
+      - Using another model without separate context does NOT establish independence.
+      - Degraded review is permitted ONLY when both fresh-context options are unavailable.
+      - Degraded review MUST disclose its limitation in the artifact.
+      - Degraded review MUST NOT be described as independent.
+      - Human acknowledgement of the degraded limitation is required before a permitting disposition.
+      - The reviewer MUST NOT fabricate human acknowledgement; leave it pending until it actually occurs.
+
+      Record the review mode and reviewer context/session in the artifact.
+
+      ## Reviewed-state evidence
+
+      Record what was actually reviewed:
+      - review mode (Independent or Degraded);
+      - reviewer context/session description;
+      - ROUND: 1 | 2;
+      - previous round outcome (if Round 2);
+      - proposal path/revision;
+      - spec paths/revisions;
+      - design path/revision;
+      - additional reviewed paths where relevant.
+
+      Where repository revision/commit information is available, record it.
+      Filesystem timestamps are informational only and MUST NOT be used as proof of review freshness.
+
+      ## Adversarial review posture
+
+      Actively challenge the plan. Review at least these attack surfaces where applicable:
+
+      Compliance:
+      - proposal, specs, and design agree with each other;
+      - required behavior from specs is supported by the design;
+      - requirements/scenarios have not been omitted or contradicted;
+      - the design does not introduce behavior that conflicts with approved specs.
+
+      Quality:
+      - ambiguity;
+      - incomplete requirements/design reasoning;
+      - assumptions hidden as facts;
+      - untestable or unverifiable behavior;
+      - missing decisions that would materially affect implementation.
+
+      Feasibility:
+      - technically implausible assumptions;
+      - dependency or integration assumptions not accounted for;
+      - implementation approach that cannot reasonably satisfy the specs;
+      - unresolved questions that would materially change implementation.
+
+      Scope:
+      - scope creep;
+      - missing in-scope behavior;
+      - unnecessary architecture beyond the approved change;
+      - mismatch between proposal scope and design.
+
+      Risk:
+      - architectural risk;
+      - migration/compatibility risk;
+      - reliability/security implications where applicable;
+      - assumptions likely to create implementation or verification failure.
+
+      Do not invent new product requirements because the reviewer prefers another design.
+      Review against the approved proposal/spec/design contract.
+
+      ## Findings taxonomy
+
+      Every finding MUST contain exactly one severity and exactly one category:
+      - Severity: Critical | Moderate | Suggestion
+      - Category: compliance | quality | feasibility | scope | risk
+
+      Use stable IDs: F-001, F-002, etc.
+      Do not fabricate findings to populate the template.
+      If there are no findings, record that the review is clean.
+
+      Do not invent an automatic severity-to-verdict mapping.
+      Verdict is based on the substantive state of the plan and the transition rules below.
+
+      ## Verdict contract
+
+      Emit exactly ONE verdict: APPROVE | APPROVE_WITH_CHANGES | REVISE
+
+      ### APPROVE
+      The reviewed plan is acceptable as-is.
+      Human disposition: STATUS: ACCEPTED (reason optional).
+      Downstream planning may proceed after the human disposition and all other gate conditions are satisfied.
+
+      ### APPROVE_WITH_CHANGES
+      Required Changes exist and MUST be applied before progression.
+      Each Required Change must record:
+      - requested change;
+      - Applied: Yes | No;
+      - Materiality: MATERIAL | NON_MATERIAL;
+      - Materiality Rationale.
+
+      ACCEPTED MUST NOT bypass unapplied Required Changes.
+
+      ### REVISE
+      Normal progression is blocked.
+      Planning artifacts must normally be revised and reviewed again.
+      Human override is possible only through explicit STATUS: OVERRIDDEN with mandatory reason.
+      The reviewer MUST NOT fabricate the override or reason.
+
+      ## Required Changes materiality
+
+      MATERIAL: affects requirements, scope, architecture, acceptance criteria, or implementation assumptions.
+      After MATERIAL Required Changes are applied, normal progression requires a new plan-review round.
+      Exception: human may record STATUS: OVERRIDDEN with mandatory reason identifying the waived re-review condition.
+      The override is an explicit exception; it does NOT make the previous review fresh.
+
+      When an override is used, the review artifact MUST record in its Re-review / Override Evidence section:
+      - each affected reviewed input path;
+      - a concise description of the change to that input;
+      - Re-review Waived: Yes;
+      - the mandatory override/waiver reason identifying the re-review condition being waived.
+
+      The prior review remains STALE for changed inputs.
+      The override does NOT make it fresh.
+      The override does NOT mean the changed plan was reviewed.
+
+      NON_MATERIAL: editorial correction only, does NOT change requirements, scope, architecture, acceptance criteria, or implementation assumptions.
+      If all Required Changes are applied and demonstrably NON_MATERIAL, the human MAY record STATUS: ACCEPTED without re-review.
+      The review artifact MUST contain justification explaining why the changes are non-material.
+
+      ## Complete verdict/disposition matrix
+
+      Case A — APPROVE:
+        Human STATUS: ACCEPTED (reason optional) → normal continuation permitted if current.
+
+      Case B — APPROVE_WITH_CHANGES + unapplied changes:
+        BLOCKED. STATUS: ACCEPTED MUST NOT permit progression.
+
+      Case C — APPROVE_WITH_CHANGES + all changes NON_MATERIAL (applied):
+        Human MAY record STATUS: ACCEPTED. Re-review MAY be skipped.
+        Materiality rationale required in the artifact.
+
+      Case D — APPROVE_WITH_CHANGES + MATERIAL change (applied):
+        Prior review is stale for changed inputs.
+        Normal progression: new plan-review round required.
+        Alternative: explicit human STATUS: OVERRIDDEN with mandatory reason.
+        Override evidence: affected inputs, change description, Re-review Waived: Yes, waived condition.
+
+      Case E — REVISE:
+        Normal progression BLOCKED. Artifacts normally revised and re-reviewed.
+
+      Case F — REVISE + human override:
+        Human MAY explicitly record STATUS: OVERRIDDEN with mandatory reason.
+        This recorded exception MAY permit downstream planning, subject to all other Goulart gates.
+        The reviewer MUST NOT fabricate the override or reason.
+
+      Case G — human chooses revision:
+        Human records STATUS: REVISE with reason. Artifacts revised and re-reviewed.
+
+      Case H — degraded review:
+        Degraded limitation disclosed; human acknowledgement actually recorded before permitting disposition.
+
+      ## Human Decision ownership
+
+      The reviewer does NOT choose the human decision.
+      The reviewer produces: reviewed-state evidence, findings, verdict, Required Changes, materiality analysis, review history.
+      The HUMAN owns: STATUS: ACCEPTED, STATUS: REVISE, STATUS: OVERRIDDEN.
+      - Leave Human Decision unrecorded until the human actually chooses.
+      - Never infer ACCEPTED from an APPROVE verdict.
+      - Never fabricate an override, Human Reason, or degraded-mode acknowledgement.
+      - Reviewer approval alone is NOT the human gate.
+
+      ## Review freshness semantics
+
+      A material change to any reviewed proposal, spec, or design makes the prior plan-review stale for the changed inputs.
+      This includes material changes requested by the reviewer itself.
+      Normal progression requires re-review unless an explicit human override is recorded.
+      An override is NOT freshness; it does not mean the changed plan was reviewed.
+
+      For NON_MATERIAL corrections, freshness may be preserved without re-review only when the rationale is explicitly recorded.
+
+      ## Two-round persistence
+
+      Record ROUND: 1 | 2 in the artifact.
+      Round 1: first review.
+      Round 2: follows Round 1 due to REVISE, MATERIAL APPROVE_WITH_CHANGES corrections, or another material change to reviewed inputs.
+      Round 2 MUST preserve concise previous-round history in the same artifact.
+      The artifact SHALL NOT overwrite with no historical evidence.
+
+      ## Round limit and escalation
+
+      Maximum 2 review/revision rounds for plan-review.
+      This limit includes re-review triggered by REVISE, APPROVE_WITH_CHANGES, or material post-review changes.
+      After Round 2, if there remains REVISE, unresolved Required Changes, or another material change requiring further review:
+      - STOP and escalate to the human.
+      - Record escalation required, escalation reason, concise unresolved issue summary.
+      - Do NOT automatically start Round 3.
+      - Do NOT reset ROUND to 1.
+      - Do NOT erase previous history.
+
+      ## Artifact-writing behavior
+
+      Populate the approved plan-review template (plan-review.md).
+      The instruction defines behavior and transition semantics; the template owns the artifact shape.
+      Do not duplicate the entire template inside schema.yaml.
     requires:
       - proposal
       - specs
