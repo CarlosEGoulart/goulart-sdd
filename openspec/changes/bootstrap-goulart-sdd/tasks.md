@@ -59,8 +59,8 @@
 
 ## 10. Methodology Documentation
 
-- [ ] 10.1 Create `docs/methodology.md` explaining the workflow, roles, gates, state-aware planning continuation, raw OpenSpec full-planning escape hatch, one-task-per-invocation TDD, independent/degraded review, verdict/disposition and two-round staleness rules, and verification prerequisites; verify documentation agrees with the lifecycle contracts and deferred scope
-- [ ] 10.2 Create `docs/getting-started.md` with installation steps and a first-change walkthrough covering initial goulart-plan → review/human disposition → later goulart-plan → goulart-apply guidance, plus Goulart-compliant versus raw execution; verify the walkthrough includes both planning stops
+- [x] 10.1 Create `docs/methodology.md` explaining the workflow, roles, gates, state-aware planning continuation, raw OpenSpec full-planning escape hatch, one-task-per-invocation TDD, independent/degraded review, verdict/disposition and two-round staleness rules, and verification prerequisites; verify documentation agrees with the lifecycle contracts and deferred scope
+- [x] 10.2 Create `docs/getting-started.md` with installation steps and a first-change walkthrough covering initial goulart-plan → review/human disposition → later goulart-plan → goulart-apply guidance, plus Goulart-compliant versus raw execution; verify the walkthrough includes both planning stops
 
 ## 11. Dogfooding Verification
 
