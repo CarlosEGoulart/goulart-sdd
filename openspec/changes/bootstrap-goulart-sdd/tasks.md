@@ -29,7 +29,7 @@
 
 ## 4. goulart-plan Adapter
 
-- [ ] 4.1 Create `.opencode/skills/goulart-plan/SKILL.md` with state-aware initial planning (proposal/specs/design → STOP → fresh-session plan review), later continuation through test-plan/tasks only when verdict/staleness/human gates permit it, exact unresolved-gate reporting, and planning-complete → STOP → goulart-apply guidance; verify all workflow state transitions are covered without another command
+- [x] 4.1 Create `.opencode/skills/goulart-plan/SKILL.md` with state-aware initial planning (proposal/specs/design → STOP → fresh-session plan review), later continuation through test-plan/tasks only when verdict/staleness/human gates permit it, exact unresolved-gate reporting, and planning-complete → STOP → goulart-apply guidance; verify all workflow state transitions are covered without another command
 - [ ] 4.2 Create `.opencode/commands/goulart-plan.md` command file that invokes the goulart-plan skill and verify the file exists
 
 ## 5. goulart-review Adapter
