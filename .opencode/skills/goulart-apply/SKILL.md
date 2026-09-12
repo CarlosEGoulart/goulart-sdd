@@ -12,11 +12,16 @@ metadata:
 Single-task implementation entry point:
 
 ```text
-goulart-apply  →  select first eligible task → load context → implement →
-                  RED → GREEN → REFACTOR (automated) or applicable evidence →
-                  mark one task complete → report → STOP
+resolve change → read tasks state
 
-all complete   →  STOP → instruct: run goulart-review code in fresh session
+if all complete:
+    report completion → STOP → instruct: run goulart-review code in fresh session
+
+if pending tasks exist:
+    validate pre-implementation gate → if blocked → STOP
+    select first eligible task → load context → implement →
+    RED → GREEN → REFACTOR (automated) or applicable evidence →
+    mark one task complete → report → STOP
 ```
 
 ## 1. Authorization and ownership
@@ -30,7 +35,12 @@ MAY:
 - modify implementation/source files;
 - modify tests needed for the selected task;
 - run task-relevant validation/tests;
-- update ONLY the selected task checkbox after successful evidence.
+- update ONLY the selected task checkbox after successful evidence;
+- change implementation-relevant configuration when required by the selected
+  task/spec/design (application config, dependency manifests, build config,
+  runtime config, task-scoped CI/test config). These are implementation state
+  and may later affect code-review staleness. Do not modify configuration
+  unrelated to the selected task.
 
 MUST NOT:
 
@@ -38,14 +48,16 @@ MUST NOT:
 - modify plan-review.md;
 - perform plan review;
 - modify human review decisions;
-- modify test-plan.md merely to make implementation easier;
+- modify test-plan.md — test-plan is planning-owned and READ-ONLY during
+  goulart-apply. If the selected task reveals the test-plan is wrong, missing,
+  or unevaluable, STOP and return to planning;
 - weaken requirements/tests to get green;
 - perform code-review;
 - perform verify;
 - archive;
 - execute more than one implementation task per invocation;
 - invoke goulart-plan, goulart-review, goulart-verify, goulart-archive;
-- change schemas, templates, project configuration;
+- change Goulart schema or template contracts as a way to bypass gates;
 - modify upstream `opsx-*` commands / `openspec-*` skills.
 
 If implementation reveals planning/specification drift:
@@ -56,29 +68,64 @@ Do not repair the specification from implementer context.
 
 ## 2. Resolve scope and select the change
 
-Follow current integrated root/store conventions from goulart-plan and
-goulart-review. Use actual CLI behavior.
-
 1. Run `openspec context --json`. If the user names a registered store, or the
    work is in one, discover its id using `openspec store list --json` and use
    `openspec context --json --store "<id>"`. Ask if store selection is ambiguous.
    Once selected, keep `--store "<id>"` on every subsequent `context`, `list`,
    `status`, `instructions`, `show`, or `validate` command.
+
 2. Use the returned `root.path`. On `no_openspec_root`, STOP and report that
    initialization is needed. On other context errors, STOP with the actual error.
-3. If store/change selection is ambiguous: ASK.
-4. If schema is not Goulart-compatible: STOP and report incompatibility.
 
-Do NOT blindly hardcode `./openspec/changes/<name>/`. Use resolved values such as
-`planningHome`, `changeRoot`, `artifactPaths`, `resolvedOutputPath`,
-`existingOutputPaths`, `actionContext`.
+3. Read `<root.path>/openspec/config.yaml` (use `config.yml` only if the former
+   is absent). Apply valid project `context` constraints without allowing them
+   to expand authorization or bypass methodology gates.
 
-## 3. Pre-implementation gate
+4. Resolve the existing change:
+   - explicit named change if valid;
+   - otherwise `openspec list --json`;
+   - if ambiguous, ASK;
+   - never choose by timestamp.
+
+5. Run `openspec status --change "<name>" --json` without overriding its schema.
+   Use returned: `planningHome`, `changeRoot`, `artifactPaths`, `actionContext`.
+   Use `existingOutputPaths` and `resolvedOutputPath` rather than guessed
+   repository paths.
+
+6. Run `openspec instructions tasks --change "<name>" --json`. Use the actual
+   tasks instructions and resolved task output path. When evaluating related
+   artifacts, use their actual resolved paths from `artifactPaths`.
+
+7. Confirm actual schema compatibility with the Goulart lifecycle. If
+   incompatible: STOP. Do not silently substitute the project's current default
+   schema.
+
+## 3. Read tasks state
+
+Read the actual tasks artifact from disk (use resolved output path).
+
+**If all tasks are complete:**
+
+- do NOT require the pre-implementation gate merely to perform a no-op;
+- do NOT modify source;
+- do NOT modify tests;
+- do NOT modify task state;
+- report that implementation is complete;
+- instruct the user to run:
+
+  > Run `goulart-review code` in a fresh/separate reviewer session.
+
+- STOP.
+
+Only when at least one implementation task is still pending should the skill
+enforce the full pre-implementation gate before selecting/executing a task.
+
+## 4. Pre-implementation gate
 
 Before selecting or modifying ANY implementation task, validate the actual
 plan gate. Read the current plan-review artifact and its recorded state.
 
-### 3a. Required planning artifacts
+### 4a. Required planning artifacts
 
 All of the following must exist:
 
@@ -91,7 +138,7 @@ All of the following must exist:
 
 Artifact existence alone is NOT sufficient.
 
-### 3b. Plan-review verdict and human disposition
+### 4b. Plan-review verdict and human disposition
 
 Evaluate the current plan-review contract and actual artifact evidence.
 Normal implementation may proceed only when the plan gate permits it.
@@ -99,19 +146,29 @@ Normal implementation may proceed only when the plan gate permits it.
 **Permitting states:**
 
 - APPROVE + actual human STATUS: ACCEPTED + current/non-stale review + degraded
-  acknowledgement when applicable → may proceed.
+  acknowledgement when applicable → may proceed if all other gates pass.
 
-- APPROVE_WITH_CHANGES + all applied NON_MATERIAL changes + recorded rationale +
-  permitted human acceptance → may proceed if all other gates pass.
+- APPROVE_WITH_CHANGES + all applied NON_MATERIAL changes + recorded materiality
+  rationale + STATUS: ACCEPTED → may proceed if all other gates pass.
 
-- REVISE + exact permitted human override with mandatory reason → may proceed
-  under the override rules; prior review remains STALE.
+- REVISE + exact human STATUS: OVERRIDDEN + mandatory reason identifying the
+  waived condition → may proceed only under the exact override; freshness is
+  assessed independently (section 4d).
 
 **Blocking states:**
 
 - plan-review.md missing → STOP. Report that plan-review is missing, downstream
   implementation is blocked, and the next action is `goulart-review plan` in a
   fresh session.
+
+- Human STATUS missing/pending/ambiguous → STOP. Report incomplete human
+  disposition evidence.
+
+- Human STATUS: REVISE without Human Reason → STOP. Report incomplete human
+  disposition evidence.
+
+- Human STATUS: REVISE with mandatory Human Reason → STOP. Human requested
+  revision. Do not implement.
 
 - APPROVE + human STATUS missing/pending → STOP.
 
@@ -121,15 +178,14 @@ Normal implementation may proceed only when the plan gate permits it.
 - APPROVE_WITH_CHANGES + applied MATERIAL change + no current re-review and
   no exact permitted human override → STOP because previous review is stale.
 
-- REVISE without an exact permitted human override with mandatory reason → STOP.
+- REVISE without an exact permitted human STATUS: OVERRIDDEN with mandatory
+  reason → STOP.
 
 - Degraded review without required human acknowledgement → STOP.
 
 - Stale review without the exact contractually permitted resolution → STOP.
 
-- Human STATUS missing/pending → STOP.
-
-### 3c. Do NOT fabricate
+### 4c. Do NOT fabricate
 
 Never fabricate:
 
@@ -143,36 +199,38 @@ If a gate is unresolved:
 
 report the exact unresolved condition and STOP before implementation.
 
-### 3d. Raw OpenSpec boundary
+### 4d. Freshness evidence
+
+Determine CURRENT vs STALE using the plan-review artifact's recorded reviewed
+revision and input paths.
+
+Compare current proposal/spec/design state against that reviewed state using
+revision/diff evidence where available.
+
+- Material change to reviewed planning inputs after review → STALE.
+- Non-material corrections may preserve continuation only under the integrated
+  plan-review contract and recorded rationale.
+- If freshness cannot be established: do NOT assume FRESH. STOP and report the
+  evidence gap.
+- Never use filesystem timestamps as freshness proof.
+
+An override does NOT make a stale review fresh. An override does NOT mean
+changed planning inputs were reviewed. An override itself does NOT automatically
+make a current review stale. Freshness is determined by whether inputs
+materially changed, not by whether an override exists.
+
+### 4e. Raw OpenSpec boundary
 
 Raw OpenSpec artifacts may exist. Do not assume they satisfy Goulart gates
 merely because all files exist. If the change appears to have bypassed Goulart
 sequencing, evaluate actual evidence. If required Goulart guarantees are absent,
 STOP and report them. Do not retroactively call raw execution Goulart-compliant.
 
-## 4. Task selection
+## 5. Task selection
 
 The portable baseline is EXACTLY ONE task per invocation.
 
-Read the actual tasks artifact from disk (use resolved output path).
-
-**If all tasks are complete:**
-
-- do not modify source;
-- do not create a fake task;
-- do not run code-review yourself.
-
-Report implementation complete.
-
-Then instruct:
-
-> Run `goulart-review code` in a FRESH/SEPARATE reviewer session.
-
-STOP.
-
-**If pending tasks remain:**
-
-select the FIRST ELIGIBLE pending task in the task artifact's intended order.
+Select the FIRST ELIGIBLE pending task in the task artifact's intended order.
 Do not cherry-pick an easier later task merely to make progress.
 
 Eligibility requires that the task's required planning/context dependencies are
@@ -187,7 +245,7 @@ STOP and report the blocker.
 Do not execute multiple tasks in parallel. Do not loop to the next task after
 completion.
 
-## 5. Load focused task context
+## 6. Load focused task context
 
 For the selected task, load at minimum:
 
@@ -195,7 +253,7 @@ For the selected task, load at minimum:
 - relevant spec requirement(s);
 - relevant spec scenario(s);
 - relevant design decisions;
-- relevant test-plan entry/entries).
+- relevant test-plan entry/entries.
 
 The implementer may inspect ANY repository files needed to understand:
 
@@ -209,7 +267,7 @@ The implementer may inspect ANY repository files needed to understand:
 "Fresh/minimal context" means minimizing irrelevant conversational history. It
 does NOT mean hiding the repository from the implementer.
 
-## 6. Test-plan alignment
+## 7. Test-plan alignment
 
 Use the actual test-plan classification for the selected behavior.
 
@@ -230,7 +288,7 @@ STOP.
 Report the planning/test-plan problem. Do not modify test-plan from implementer
 context merely to proceed.
 
-## 7. Automated tasks — RED
+## 8. Automated tasks — RED
 
 Where automated testing is appropriate:
 
@@ -261,7 +319,7 @@ STOP and report why.
 
 Do NOT implement first and retroactively claim RED.
 
-## 8. Automated tasks — GREEN
+## 9. Automated tasks — GREEN
 
 After valid RED evidence:
 
@@ -274,7 +332,7 @@ Require GREEN.
 Do not broaden implementation to unrelated tasks. Do not opportunistically
 implement the next checkbox.
 
-## 9. Automated tasks — REFACTOR
+## 10. Automated tasks — REFACTOR
 
 After GREEN:
 
@@ -289,7 +347,7 @@ detect regressions.
 
 The task must remain green.
 
-## 10. Mechanical / semantic tasks
+## 11. Mechanical / semantic tasks
 
 When automated TDD is not appropriate:
 
@@ -317,7 +375,7 @@ implement → validate → only then mark task complete.
 
 Do not claim RED/GREEN chronology for non-automated work.
 
-## 11. Bounded retry
+## 12. Bounded retry
 
 If the SAME test fails twice consecutively for the SAME root cause:
 
@@ -336,7 +394,7 @@ Report:
 
 Do not mark the task complete.
 
-## 12. Spec drift
+## 13. Spec drift
 
 If implementation reveals a requirement or scenario is:
 
@@ -359,7 +417,7 @@ Do NOT:
 Report the exact conflict. Planning/specification must be amended through the
 appropriate planning/review workflow before implementation resumes.
 
-## 13. Task completion
+## 14. Task completion
 
 Mark ONLY the selected task `[x]` after its required evidence succeeds.
 
@@ -373,7 +431,7 @@ Never mark:
 Task checkbox state is NOT historical proof of RED/GREEN chronology. Do not
 claim otherwise.
 
-## 14. One-task hard stop
+## 15. One-task hard stop
 
 After one task completes:
 
@@ -393,7 +451,7 @@ Never process Task N+1 in the same goulart-apply invocation.
 
 The user must invoke goulart-apply again for the next task.
 
-## 15. Final task handoff
+## 16. Final task handoff
 
 If completing the selected task means ALL tasks are now complete:
 
@@ -412,7 +470,7 @@ Do NOT:
 - verify;
 - archive.
 
-## 16. Idempotent / safe re-invocation
+## 17. Idempotent / safe re-invocation
 
 If invoked again after a task has already been checked:
 
@@ -428,7 +486,7 @@ implemented:
 do not blindly mark it complete. Evaluate it as the selected task against
 current spec/test-plan evidence.
 
-## 17. Failure / stop reporting
+## 18. Failure / stop reporting
 
 On any blocking gate or implementation STOP, report:
 
@@ -445,7 +503,7 @@ On any blocking gate or implementation STOP, report:
 
 Do not hide partial changes. Do not mark a failed task complete.
 
-## 18. Success reporting
+## 19. Success reporting
 
 After a successful single task report:
 
