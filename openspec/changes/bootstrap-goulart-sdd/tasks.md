@@ -34,43 +34,43 @@
 
 ## 5. goulart-review Adapter
 
-- [x] 5.1 Create `.opencode/skills/goulart-review/SKILL.md` for plan/code reviews using their separate artifact contracts, independent-context versus disclosed/acknowledged degraded fallback, severity/category findings, stage-specific verdict transitions, human plan disposition versus conditional code triage, materiality/staleness, explicit overrides, and bounded round persistence; verify behavior matches both review specs
-- [x] 5.2 Create `.opencode/commands/goulart-review.md` command file that invokes the goulart-review skill and verify the file exists
+- [ ] 5.1 Create `.opencode/skills/goulart-review/SKILL.md` for plan/code reviews using their separate artifact contracts, independent-context versus disclosed/acknowledged degraded fallback, severity/category findings, stage-specific verdict transitions, human plan disposition versus conditional code triage, materiality/staleness, explicit overrides, and bounded round persistence; verify behavior matches both review specs
+- [ ] 5.2 Create `.opencode/commands/goulart-review.md` command file that invokes the goulart-review skill and verify the file exists
 
 ## 6. goulart-apply Adapter
 
-- [x] 6.1 Create `.opencode/skills/goulart-apply/SKILL.md` with instructions for: one-task-per-invocation baseline, select first eligible pending task, load relevant context (task/spec/design/test-plan), allow repository exploration, TDD execution (RED-GREEN-REFACTOR), mark task complete, report result, STOP. When all tasks complete, instruct user to run `goulart-review code` in a fresh session. Pre-implementation gate checks (plan-review verdict, human acceptance, test-plan existence). And verify the file exists
-- [x] 6.2 Create `.opencode/commands/goulart-apply.md` command file that invokes the goulart-apply skill and verify the file exists
+- [ ] 6.1 Create `.opencode/skills/goulart-apply/SKILL.md` with instructions for: one-task-per-invocation baseline, select first eligible pending task, load relevant context (task/spec/design/test-plan), allow repository exploration, TDD execution (RED-GREEN-REFACTOR), mark task complete, report result, STOP. When all tasks complete, instruct user to run `goulart-review code` in a fresh session. Pre-implementation gate checks (plan-review verdict, human acceptance, test-plan existence). And verify the file exists
+- [ ] 6.2 Create `.opencode/commands/goulart-apply.md` command file that invokes the goulart-apply skill and verify the file exists
 
 ## 7. goulart-verify Adapter
 
-- [x] 7.1 Create `.opencode/skills/goulart-verify/SKILL.md` that independently blocks on missing/non-permitting code-review, incomplete mandatory triage, incomplete tasks, unevaluable test-plan entries, or unresolved stale-review gates; assess recorded review exceptions without claiming freshness, then audit spec compliance, all three validation types, and two-lineage staleness (including accepted-finding fixes) and produce DECISION/reviewed metadata; verify prerequisite-blocking and result-production scenarios match the verification spec
-- [x] 7.2 Create `.opencode/commands/goulart-verify.md` command file that invokes the goulart-verify skill and verify the file exists
+- [ ] 7.1 Create `.opencode/skills/goulart-verify/SKILL.md` that independently blocks on missing/non-permitting code-review, incomplete mandatory triage, incomplete tasks, unevaluable test-plan entries, or unresolved stale-review gates; assess recorded review exceptions without claiming freshness, then audit spec compliance, all three validation types, and two-lineage staleness (including accepted-finding fixes) and produce DECISION/reviewed metadata; verify prerequisite-blocking and result-production scenarios match the verification spec
+- [ ] 7.2 Create `.opencode/commands/goulart-verify.md` command file that invokes the goulart-verify skill and verify the file exists
 
 ## 8. goulart-archive Adapter
 
-- [x] 8.1 Create `.opencode/skills/goulart-archive/SKILL.md` with instructions for: check verify decision — PASS delegates to OpenSpec archive, PASS_WITH_WARNINGS delegates only after human warning dispositions are recorded, FAIL blocks archive (human override must be explicit with reason). Do NOT modify upstream opsx-archive or OpenSpec archive behavior. And verify the file exists
-- [x] 8.2 Create `.opencode/commands/goulart-archive.md` command file that invokes the goulart-archive skill and verify the file exists
+- [ ] 8.1 Create `.opencode/skills/goulart-archive/SKILL.md` with instructions for: check verify decision — PASS delegates to OpenSpec archive, PASS_WITH_WARNINGS delegates only after human warning dispositions are recorded, FAIL blocks archive (human override must be explicit with reason). Do NOT modify upstream opsx-archive or OpenSpec archive behavior. And verify the file exists
+- [ ] 8.2 Create `.opencode/commands/goulart-archive.md` command file that invokes the goulart-archive skill and verify the file exists
 
 ## 9. Project Configuration
 
-- [x] 9.1 Update `openspec/config.yaml` with project context describing Goulart SDD, its purpose, and constraints, and verify the file is valid YAML
-- [x] 9.2 Add per-artifact rules to `openspec/config.yaml` for `specs` (require SHALL/MUST, every scenario must be testable) and `tasks` (TDD ordering, small tasks), and verify the config file parses correctly
+- [ ] 9.1 Update `openspec/config.yaml` with project context describing Goulart SDD, its purpose, and constraints, and verify the file is valid YAML
+- [ ] 9.2 Add per-artifact rules to `openspec/config.yaml` for `specs` (require SHALL/MUST, every scenario must be testable) and `tasks` (TDD ordering, small tasks), and verify the config file parses correctly
 
 ## 10. Methodology Documentation
 
-- [x] 10.1 Create `docs/methodology.md` explaining the workflow, roles, gates, state-aware planning continuation, raw OpenSpec full-planning escape hatch, one-task-per-invocation TDD, independent/degraded review, verdict/disposition and two-round staleness rules, and verification prerequisites; verify documentation agrees with the lifecycle contracts and deferred scope
-- [x] 10.2 Create `docs/getting-started.md` with installation steps and a first-change walkthrough covering initial goulart-plan → review/human disposition → later goulart-plan → goulart-apply guidance, plus Goulart-compliant versus raw execution; verify the walkthrough includes both planning stops
+- [ ] 10.1 Create `docs/methodology.md` explaining the workflow, roles, gates, state-aware planning continuation, raw OpenSpec full-planning escape hatch, one-task-per-invocation TDD, independent/degraded review, verdict/disposition and two-round staleness rules, and verification prerequisites; verify documentation agrees with the lifecycle contracts and deferred scope
+- [ ] 10.2 Create `docs/getting-started.md` with installation steps and a first-change walkthrough covering initial goulart-plan → review/human disposition → later goulart-plan → goulart-apply guidance, plus Goulart-compliant versus raw execution; verify the walkthrough includes both planning stops
 
 ## 11. Dogfooding Verification
 
 These are lightweight adapter/schema smoke checks; documented manual evaluation is acceptable where automation is impractical. No complete fake application is required. Validate populated planning artifacts rather than treating a newly created empty change as a valid completed plan.
 
-- [x] 11.1 Create a test change using the `goulart-sdd` schema (`openspec new change "dogfood-test" --schema goulart-sdd`) and verify the change directory is created with the correct schema
-- [x] 11.2 Verify that the test change's `.openspec.yaml` references the `goulart-sdd` schema and that `openspec status` shows all expected artifacts (proposal, specs, design, plan-review, test-plan, tasks, code-review, verify)
-- [x] 11.3 Smoke test planning gate: run `goulart-plan` on the test change, verify it creates proposal/specs/design and stops before plan-review/test-plan/tasks
-- [x] 11.4 Smoke test apply gate: on a temporary change without valid plan-review/human acceptance, verify `goulart-apply` refuses implementation
-- [x] 11.5 Smoke test archive gate: on a temporary change without valid verify state, verify `goulart-archive` refuses archive delegation
-- [x] 11.6 Smoke test planning continuation: prepare a valid plan-review with permitted human acceptance after the initial planning stop; invoke goulart-plan again and verify it creates/continues test-plan and tasks, reports planning complete, STOPs, and identifies goulart-apply as the next step without executing it
-- [x] 11.7 After planning smoke checks populate the test change, run `openspec validate dogfood-test` and confirm no blocking errors, recording any warnings
-- [x] 11.8 Clean up temporary dogfood change directories after verification
+- [ ] 11.1 Create a test change using the `goulart-sdd` schema (`openspec new change "dogfood-test" --schema goulart-sdd`) and verify the change directory is created with the correct schema
+- [ ] 11.2 Verify that the test change's `.openspec.yaml` references the `goulart-sdd` schema and that `openspec status` shows all expected artifacts (proposal, specs, design, plan-review, test-plan, tasks, code-review, verify)
+- [ ] 11.3 Smoke test planning gate: run `goulart-plan` on the test change, verify it creates proposal/specs/design and stops before plan-review/test-plan/tasks
+- [ ] 11.4 Smoke test apply gate: on a temporary change without valid plan-review/human acceptance, verify `goulart-apply` refuses implementation
+- [ ] 11.5 Smoke test archive gate: on a temporary change without valid verify state, verify `goulart-archive` refuses archive delegation
+- [ ] 11.6 Smoke test planning continuation: prepare a valid plan-review with permitted human acceptance after the initial planning stop; invoke goulart-plan again and verify it creates/continues test-plan and tasks, reports planning complete, STOPs, and identifies goulart-apply as the next step without executing it
+- [ ] 11.7 After planning smoke checks populate the test change, run `openspec validate dogfood-test` and confirm no blocking errors, recording any warnings
+- [ ] 11.8 Clean up temporary dogfood change directories after verification
