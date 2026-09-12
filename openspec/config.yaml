@@ -1,32 +1,26 @@
 schema: goulart-sdd
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Goulart SDD is an opinionated Spec-Driven Development methodology on top of
+  OpenSpec. It uses a strict-only profile, goulart-* namespace for all custom
+  adapters, and OpenCode as the first adapter.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Workflow: goulart-plan → independent review → goulart-apply (TDD) →
+  goulart-verify → goulart-archive.
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Roles: Author (plan), Reviewer (review), Implementer (apply), Verifier (verify).
+
+  The custom schema goulart-sdd adds plan-review, test-plan, code-review, and
+  verify artifacts to OpenSpec's spec-driven schema. All upstream OpenSpec
+  commands and skills are read-only; Goulart never modifies them.
+
+rules:
+  specs:
+    - Use SHALL or MUST for all normative requirements
+    - Every #### Scenario must be testable by AUTOMATED, MECHANICAL, or SEMANTIC validation
+    - Do not add requirements without corresponding scenarios
+  tasks:
+    - Order tasks for TDD: test first, then implementation
+    - Keep tasks small and focused (one logical change per task)
+    - Each task must be independently testable
+    - Do not batch unrelated changes into a single task
