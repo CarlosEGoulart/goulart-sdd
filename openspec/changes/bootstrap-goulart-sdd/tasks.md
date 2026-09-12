@@ -40,7 +40,7 @@
 ## 6. goulart-apply Adapter
 
 - [x] 6.1 Create `.opencode/skills/goulart-apply/SKILL.md` with instructions for: one-task-per-invocation baseline, select first eligible pending task, load relevant context (task/spec/design/test-plan), allow repository exploration, TDD execution (RED-GREEN-REFACTOR), mark task complete, report result, STOP. When all tasks complete, instruct user to run `goulart-review code` in a fresh session. Pre-implementation gate checks (plan-review verdict, human acceptance, test-plan existence). And verify the file exists
-- [ ] 6.2 Create `.opencode/commands/goulart-apply.md` command file that invokes the goulart-apply skill and verify the file exists
+- [x] 6.2 Create `.opencode/commands/goulart-apply.md` command file that invokes the goulart-apply skill and verify the file exists
 
 ## 7. goulart-verify Adapter
 
