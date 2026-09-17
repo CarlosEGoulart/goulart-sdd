@@ -31,24 +31,10 @@ context: |
   - The light workflow profile, additional coding-agent adapters, and broader
     CI enforcement are deferred.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
-
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+rules:
+  specs:
+    - Use SHALL or MUST for normative requirements; avoid SHOULD/MAY for required behavior.
+    - Every scenario must be testable or explicitly verifiable with observable acceptance criteria.
+  tasks:
+    - Keep each implementation task small and focused enough to complete in one coding-agent session.
+    - For AUTOMATED behavioral validations, require test-first RED → GREEN → REFACTOR ordering within the focused implementation task; do not invent tests for MECHANICAL or SEMANTIC work.
