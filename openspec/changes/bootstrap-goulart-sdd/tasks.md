@@ -50,7 +50,7 @@
 ## 8. goulart-archive Adapter
 
 - [x] 8.1 Create `.opencode/skills/goulart-archive/SKILL.md` with instructions for: check verify decision — PASS delegates to OpenSpec archive, PASS_WITH_WARNINGS delegates only after human warning dispositions are recorded, FAIL blocks archive (human override must be explicit with reason). Do NOT modify upstream opsx-archive or OpenSpec archive behavior. And verify the file exists
-- [ ] 8.2 Create `.opencode/commands/goulart-archive.md` command file that invokes the goulart-archive skill and verify the file exists
+- [x] 8.2 Create `.opencode/commands/goulart-archive.md` command file that invokes the goulart-archive skill and verify the file exists
 
 ## 9. Project Configuration
 
