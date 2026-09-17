@@ -12,7 +12,8 @@ metadata:
 Final lifecycle entry point:
 
 ```text
-resolve change → locate verify artifact → assess freshness → route on DECISION
+resolve change → locate verify artifact → validate structural consistency
+→ assess freshness → route on DECISION
 
 if PASS: delegate to OpenSpec archive
 if PASS_WITH_WARNINGS: require human warning dispositions → delegate to OpenSpec archive
@@ -33,12 +34,18 @@ goulart-archive MUST NOT:
 - silently promote PASS_WITH_WARNINGS to PASS;
 - silently suppress a FAIL decision;
 - represent raw execution as Goulart-compliant;
-- modify verify artifacts to make archive pass.
+- modify verify artifacts to make archive pass;
+- create a new methodology artifact;
+- invent a new schema field;
+- modify verify.md to add archive-stage decisions;
+- modify review artifacts;
+- invent a durable archive-decision file.
 
 goulart-archive MAY:
 
 - read all relevant artifacts (verify, code-review, test-plan, tasks, specs);
 - require human input (warning dispositions, override reason);
+- build an in-invocation archive gate ledger for this invocation only;
 - delegate to upstream OpenSpec archive after gate satisfaction;
 - report decision metadata and warnings.
 
@@ -82,7 +89,78 @@ blocked artifact — no DECISION emitted): STOP. Report the blocked
 prerequisites exactly as goulart-verify reported them. Verification audit did
 NOT run and no final verification DECISION was emitted.
 
-## 4. Assess verify-result freshness
+## 4. Validate verify-result structural consistency
+
+Before freshness assessment or decision routing, validate the completed verify
+result's internal consistency. This is NOT a re-audit — only a structural
+cross-check of the recorded decision and metadata.
+
+### 4a. Exactly one final decision
+
+The verify artifact MUST contain EXACTLY one final decision value:
+
+- PASS
+- PASS_WITH_WARNINGS
+- FAIL
+
+BLOCK if:
+
+- DECISION field is missing or empty;
+- multiple conflicting DECISION values exist;
+- DECISION contains an unknown value;
+- DECISION contains an unresolved placeholder;
+- artifact contains only prerequisite-block evidence (no DECISION emitted).
+
+### 4b. Decision / count / warning consistency
+
+Read and cross-check where present in the verify artifact:
+
+- Blocking Finding Count
+- Warning Count
+- Findings / Warnings rows
+- Decision Summary
+- Reviewed Revision
+- Verification Evidence Paths
+
+**PASS consistency:**
+
+- Blocking Finding Count MUST = 0
+- Warning Count MUST = 0
+- No recorded BLOCKING finding row
+- No recorded WARNING row
+
+If PASS has Warning Count > 0 or any warning row: BLOCK as inconsistent
+verify artifact. Do NOT reinterpret it as PASS_WITH_WARNINGS.
+
+**PASS_WITH_WARNINGS consistency:**
+
+- Blocking Finding Count MUST = 0
+- Warning Count MUST >= 1
+- At least one identifiable warning exists (stable ID, e.g. W-001)
+- Stable warning IDs available for human disposition
+
+If warning count cannot be reconciled sufficiently with identifiable warnings:
+BLOCK. Require re-verification or correction of verify evidence. Do NOT guess
+warning identity.
+
+**FAIL consistency:**
+
+- One or more blocking audit findings must be represented consistently
+  (finding row with Type BLOCKING, or Blocking Finding Count >= 1 with
+  supporting evidence).
+
+If FAIL contains no blocking finding, no blocking count, and no supporting
+evidence, and the artifact is internally contradictory: BLOCK as
+malformed/inconsistent verification evidence. Do NOT invent a blocking
+finding.
+
+### 4c. Unknown or contradictory result
+
+Unknown or contradictory decision result: no upstream delegation. STOP and
+report the inconsistency. Require correction of the verify artifact before
+archive can proceed.
+
+## 5. Assess verify-result freshness
 
 The verify decision must represent the current reviewed state. Staleness
 detection uses repository revision/diff information where available, falling
@@ -111,64 +189,90 @@ material changes detected: record FRESH and proceed.
 
 Never use timestamps as freshness evidence under any circumstance.
 
-## 5. Decision routing — DECISION: PASS
+## 6. Decision routing — DECISION: PASS
 
 When the verify artifact records DECISION: PASS:
 
 - All audit checks passed, blocking findings = 0, warnings = 0.
+- Verify structural consistency confirmed (section 4b PASS checks satisfied).
 - Archive MAY proceed.
-- Delegate to upstream OpenSpec archive (section 9).
+- Delegate to upstream OpenSpec archive (section 10).
 
-## 6. Decision routing — DECISION: PASS_WITH_WARNINGS
+## 7. Decision routing — DECISION: PASS_WITH_WARNINGS
 
 When the verify artifact records DECISION: PASS_WITH_WARNINGS:
 
 - All blocking checks passed, blocking findings = 0, warnings >= 1.
+- Verify structural consistency confirmed (section 4b PASS_WITH_WARNINGS
+  checks satisfied).
 - Warnings MUST be surfaced to the human.
 - Archive MAY proceed ONLY after the human explicitly accepts or defers each
   warning.
 - PASS_WITH_WARNINGS SHALL NOT silently mean PASS.
 
-**Step 6a — Surface warnings:**
+**Step 7a — Surface warnings:**
 
 List every warning from the verify artifact with its ID, area, description,
 and evidence.
 
-**Step 6b — Require human disposition:**
+**Step 7b — Require human disposition:**
 
 For each warning, require the human to choose one of:
 
-- **ACCEPT** — acknowledge the warning and permit archive to proceed. Record
-  the acceptance.
+- **ACCEPT** — acknowledge the warning and permit archive to proceed.
 - **DEFER** — acknowledge the warning and permit archive to proceed with the
-  warning flagged for later review. Record the deferral.
+  warning flagged for later review.
 
-Warnings without a recorded human disposition block archive.
+Warnings without a human disposition block archive.
 
-**Step 6c — Record dispositions:**
+**Step 7c — Build in-invocation archive gate ledger:**
 
-Persist the human dispositions for each warning. These dispositions are
-informational records — they do not retroactively change PASS_WITH_WARNINGS
-to PASS.
+Build the warning disposition ledger from the human's explicit responses in
+this invocation:
 
-**Step 6d — Delegate:**
+```text
+Archive Gate Ledger — Warning Dispositions
+Change: <name>
+Verify Decision: PASS_WITH_WARNINGS
 
-After all warnings have a recorded disposition: delegate to upstream OpenSpec
-archive (section 9).
+W-001 → <ACCEPT | DEFER>
+W-002 → <ACCEPT | DEFER>
+...
+```
 
-## 7. Decision routing — DECISION: FAIL
+This ledger is evidence consumed by THIS archive invocation only.
+
+goulart-archive MUST NOT:
+
+- modify verify.md to record these dispositions;
+- claim PASS_WITH_WARNINGS became PASS;
+- create a durable archive-decision file;
+- invent a new schema field;
+- modify any other artifact.
+
+If prior evidence is ambiguous, conflicting, agent-authored, or not clearly
+human-owned: ASK the human. Do not assume prior agent output represents human
+dispositions.
+
+**Step 7d — Delegate:**
+
+After all warnings have a recorded disposition in the in-invocation ledger:
+delegate to upstream OpenSpec archive (section 10).
+
+## 8. Decision routing — DECISION: FAIL
 
 When the verify artifact records DECISION: FAIL:
 
 - The verification audit actually ran and found blocking audit findings.
+- Verify structural consistency confirmed (section 4b FAIL checks satisfied).
 - Archive SHALL NOT proceed unless the human explicitly overrides with reason.
 
-**Step 7a — Surface blocking findings:**
+**Step 8a — Surface blocking findings:**
 
 List every blocking finding from the verify artifact with its ID, area,
 description, and evidence.
 
-**Step 7b — Require explicit human override:**
+**Step 8b — Require explicit human override:**
 
 The human MAY instruct archive to proceed despite FAIL. The override MUST
 include:
@@ -180,18 +284,36 @@ include:
 Without all three elements: archive is BLOCKED. Do NOT infer override from
 vague or partial input.
 
-**Step 7c — Record override:**
+**Step 8c — Build in-invocation archive override ledger:**
 
-Persist the override evidence, waived condition(s), and reason. These
-override records are permanent — they do not retroactively change FAIL to PASS
-or remove the blocking findings from the verify artifact.
+Build the override ledger from the human's explicit response in this
+invocation:
 
-**Step 7d — Delegate:**
+```text
+Archive Gate Ledger — FAIL Override
+Change: <name>
+Decision being overridden: FAIL
+Condition(s) waived: <finding IDs / descriptions>
+Human authorization: explicit
+Human reason: <actual reason>
+```
 
-After a valid override is recorded: delegate to upstream OpenSpec archive
-(section 9).
+This ledger is gate evidence for THIS invocation only.
 
-## 8. Raw OpenSpec boundary
+goulart-archive MUST NOT:
+
+- modify verify.md to record this override;
+- rewrite FAIL to another decision;
+- remove or suppress blocking findings from the verify artifact;
+- create another artifact;
+- invent human evidence.
+
+**Step 8d — Delegate:**
+
+After a valid override is recorded in the in-invocation ledger: delegate to
+upstream OpenSpec archive (section 10).
+
+## 9. Raw OpenSpec boundary
 
 Raw OpenSpec execution (direct use of `/opsx-archive`, `openspec archive`) is
 available as an escape hatch. Users MAY bypass goulart-archive and archive a
@@ -209,10 +331,29 @@ goulart-archive MUST NOT disable, modify, or remove the raw escape hatch.
 When the user explicitly requests raw archive: inform them that raw execution
 does not satisfy Goulart compliance guarantees and proceed if they confirm.
 
-## 9. Delegate to upstream OpenSpec archive
+## 10. Delegate to upstream OpenSpec archive
 
-After the verify gate is satisfied (PASS, PASS_WITH_WARNINGS with all
-dispositions recorded, or FAIL with valid override recorded):
+Before delegation, explicitly confirm the upstream archive integration exists:
+
+```text
+.opencode/skills/openspec-archive-change/SKILL.md
+```
+
+If this file is unavailable: STOP. Report that Goulart archive delegation is
+unavailable because the upstream OpenSpec archive skill is missing. Required
+next action: restore, regenerate, or update the OpenSpec integration.
+
+goulart-archive MUST NOT:
+
+- manually reproduce the archive workflow;
+- move the change manually;
+- recreate spec sync logic;
+- invoke equivalent filesystem operations as a fallback;
+- modify `opsx-archive`.
+
+After confirming the upstream skill exists and the verify gate is satisfied
+(PASS, PASS_WITH_WARNINGS with all dispositions recorded in the in-invocation
+ledger, or FAIL with valid override recorded in the in-invocation ledger):
 
 Delegate to the upstream `openspec-archive-change` skill. Follow the upstream
 skill's steps exactly — do not modify its behavior.
@@ -232,7 +373,7 @@ its own checks independently.
 upstream skill (same `--store` flags, same change name). The upstream skill
 operates on the same change.
 
-## 10. Decision preservation
+## 11. Decision preservation
 
 The verify decision is permanent. goulart-archive MUST NOT:
 
@@ -245,7 +386,7 @@ The verify decision is permanent. goulart-archive MUST NOT:
 Human override is an exception to the archive gate — not a modification of the
 verify decision itself.
 
-## 11. Reporting
+## 12. Reporting
 
 On successful archive delegation:
 
@@ -273,7 +414,7 @@ Next Action: <required human action>
 Do NOT report archive as complete until upstream OpenSpec archive confirms
 success.
 
-## 12. Idempotency / existing archive
+## 13. Idempotency / existing archive
 
 If the change has already been archived (directory moved to archive):
 
@@ -284,7 +425,7 @@ If the change has already been archived (directory moved to archive):
 If a verify artifact already exists and is fresh: use its decision directly.
 Do NOT re-run verification unless the verify result is stale.
 
-## 13. Failure / stop reporting
+## 14. Failure / stop reporting
 
 On any STOP condition: report the COMPLETE gate state — not merely the first
 encountered failure:
@@ -294,14 +435,16 @@ encountered failure:
 - verify artifact path (if exists);
 - verify decision (if exists);
 - verify reviewed revision/paths;
+- structural consistency assessment;
 - freshness assessment;
-- blocking condition (stale verify, missing verify, blocked prerequisites,
-  missing warning dispositions, missing override);
+- blocking condition (stale verify, missing verify, malformed/inconsistent
+  verify, blocked prerequisites, missing warning dispositions, missing
+  override, missing upstream skill);
 - exact next human actions.
 
 Do not phrase archive blocking as upstream archive failure.
 
-## 14. Success reporting
+## 15. Success reporting
 
 On completed archive (upstream confirms success):
 
