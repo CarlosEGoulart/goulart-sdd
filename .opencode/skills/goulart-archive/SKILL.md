@@ -13,7 +13,7 @@ Final lifecycle entry point:
 
 ```text
 resolve change → locate verify artifact → validate structural consistency
-→ assess freshness → route on DECISION
+→ validate routing-critical metadata → assess freshness → route on DECISION
 
 if PASS: delegate to OpenSpec archive
 if PASS_WITH_WARNINGS: require human warning dispositions → delegate to OpenSpec archive
@@ -111,50 +111,109 @@ BLOCK if:
 - DECISION contains an unresolved placeholder;
 - artifact contains only prerequisite-block evidence (no DECISION emitted).
 
-### 4b. Decision / count / warning consistency
+### 4b. Routing-critical metadata — mandatory counts
 
-Read and cross-check where present in the verify artifact:
+Before any decision-specific consistency check, require these fields to exist
+and be parseable in the verify artifact:
 
+- Blocking Finding Count
+- Warning Count
+
+Both MUST be non-negative integers.
+
+If either field is:
+
+- missing;
+- blank;
+- placeholder (e.g. `___`, `TBD`, `N/A`);
+- malformed;
+- non-numeric;
+- negative;
+
+→ BLOCK as malformed verification evidence.
+
+Do NOT guess a count from prose, infer a count from the number of table rows,
+or synthesize a count from the Decision Summary. The counts must be explicitly
+recorded numeric fields.
+
+### 4c. Decision / count / warning consistency
+
+Read and cross-check the routing-critical counts against the recorded findings
+and warnings. The Findings / Warnings table must be reconciled with the
+declared counts.
+
+**PASS requires ALL:**
+
+- Blocking Finding Count = 0
+- Warning Count = 0
+- zero BLOCKING rows in Findings / Warnings
+- zero WARNING rows in Findings / Warnings
+
+Otherwise: BLOCK. Do NOT reinterpret as another decision.
+
+**PASS_WITH_WARNINGS requires ALL:**
+
+- Blocking Finding Count = 0
+- Warning Count >= 1
+- zero BLOCKING rows in Findings / Warnings
+- identifiable WARNING rows exist (stable IDs, e.g. W-001, W-002)
+- every warning required by Warning Count can be mapped to a stable warning ID
+- warning rows/count do not contradict each other
+
+Additional PASS_WITH_WARNINGS contradiction rules:
+
+- If Blocking Finding Count = 0 but a BLOCKING row exists: BLOCK as
+  contradictory.
+- If Warning Count = 2 but only one identifiable warning exists: BLOCK. Do NOT
+  guess the missing warning.
+- If warning rows exist beyond the declared count: BLOCK. Do NOT guess missing
+  warnings.
+
+**FAIL requires ALL:**
+
+- Blocking Finding Count >= 1
+- at least one identifiable BLOCKING finding exists in the recorded findings
+- blocking rows/evidence and Blocking Finding Count are mutually consistent
+- no contradiction claims zero blocking findings elsewhere in the final
+  decision metadata
+
+Additional FAIL contradiction rules:
+
+- If Blocking Finding Count = 0 but a BLOCKING row exists: BLOCK as
+  contradictory.
+- If Blocking Finding Count = 2 but no identifiable blocking findings/evidence
+  exist: BLOCK. Do NOT invent findings.
+- If DECISION: FAIL but Decision Summary says "no blocking findings" or
+  equivalent: BLOCK as contradictory.
+
+Warnings MAY coexist with FAIL, but Warning Count must still reconcile with
+recorded WARNING rows if warnings are present.
+
+### 4d. Contradiction rule
+
+Any material contradiction among:
+
+- DECISION
 - Blocking Finding Count
 - Warning Count
 - Findings / Warnings rows
 - Decision Summary
-- Reviewed Revision
-- Verification Evidence Paths
 
-**PASS consistency:**
+results in:
 
-- Blocking Finding Count MUST = 0
-- Warning Count MUST = 0
-- No recorded BLOCKING finding row
-- No recorded WARNING row
+STRUCTURAL CONSISTENCY = BLOCKED
 
-If PASS has Warning Count > 0 or any warning row: BLOCK as inconsistent
-verify artifact. Do NOT reinterpret it as PASS_WITH_WARNINGS.
+Then:
 
-**PASS_WITH_WARNINGS consistency:**
+- do NOT assess archive eligibility as permitted;
+- do NOT invoke upstream archive;
+- report the exact contradiction;
+- require corrected or re-run verification evidence.
 
-- Blocking Finding Count MUST = 0
-- Warning Count MUST >= 1
-- At least one identifiable warning exists (stable ID, e.g. W-001)
-- Stable warning IDs available for human disposition
+Archive is a consumer of verify evidence. It must never repair that evidence
+itself.
 
-If warning count cannot be reconciled sufficiently with identifiable warnings:
-BLOCK. Require re-verification or correction of verify evidence. Do NOT guess
-warning identity.
-
-**FAIL consistency:**
-
-- One or more blocking audit findings must be represented consistently
-  (finding row with Type BLOCKING, or Blocking Finding Count >= 1 with
-  supporting evidence).
-
-If FAIL contains no blocking finding, no blocking count, and no supporting
-evidence, and the artifact is internally contradictory: BLOCK as
-malformed/inconsistent verification evidence. Do NOT invent a blocking
-finding.
-
-### 4c. Unknown or contradictory result
+### 4e. Unknown or contradictory result
 
 Unknown or contradictory decision result: no upstream delegation. STOP and
 report the inconsistency. Require correction of the verify artifact before
@@ -171,40 +230,84 @@ freshness evidence.
 Record the verify artifact's reviewed revision and reviewed paths. Compare
 against current repository state.
 
-**Case A — reviewed revision matches current state or changes are non-material:**
+**Case A — revision matches, current state is identical to reviewed state:**
 
-Freshness is satisfied. Proceed to decision routing.
+The reviewed revision accurately represents the reviewed state and current
+relevant state matches it.
 
-**Case B — material changes occurred after the reviewed revision:**
+→ FRESH. Proceed to decision routing.
 
-Record freshness as STALE. STOP. Report that verification is stale and
-`goulart-verify` must be re-run before archive. Do NOT proceed to decision
-routing.
+**Case B — changes after reviewed revision are demonstrably NON_MATERIAL:**
 
-**Case C — revision cannot be determined (semantic fallback required):**
+Relevant changes after the Reviewed Revision are demonstrably non-material to
+the verified state.
 
-Compare verify artifact's reviewed paths against current state using semantic
-judgment. If material changes are detected: record STALE and STOP. If no
-material changes detected: record FRESH and proceed.
+→ FRESH only with explicit semantic rationale/evidence explaining why the
+changes are non-material. Proceed to decision routing.
 
-Never use timestamps as freshness evidence under any circumstance.
+**Case C — material verification-relevant changes occurred:**
+
+Material verification-relevant changes occurred after the reviewed revision.
+
+→ STALE
+→ BLOCK
+→ require `goulart-verify` to be re-run before archive.
+Do NOT proceed to decision routing.
+
+**Case D — revision/diff cannot faithfully represent the reviewed state:**
+
+Semantic fallback is required because the repository state cannot be
+faithfully represented by revision/diff alone (e.g. worktree changes not
+committed, uncommitted staged changes, or ambiguous branch state).
+
+Perform conservative semantic comparison.
+
+- If material change is demonstrated: → STALE → BLOCK.
+
+- If absence of material change can be established with sufficient evidence:
+  → FRESH → proceed to decision routing.
+
+- If applicability CANNOT be established safely because evidence is
+  incomplete, ambiguous, unavailable, or inconclusive:
+
+  → freshness/applicability = UNKNOWN
+  → BLOCK
+  → no decision routing
+  → no upstream delegation
+  → report the evidence gap
+  → instruct the user to re-run `goulart-verify` or provide sufficient
+    evidence.
+
+Do NOT use filesystem timestamps.
+
+Do NOT treat "no obvious difference found" as equivalent to "freshness
+established". The absence of detected material change is not the same as
+positive evidence of freshness when the comparison itself is inconclusive.
+
+A FAIL human override MUST NOT waive verify-result staleness or unknown
+applicability. Override is an exception to the archive gate, never to
+freshness.
 
 ## 6. Decision routing — DECISION: PASS
 
 When the verify artifact records DECISION: PASS:
 
 - All audit checks passed, blocking findings = 0, warnings = 0.
-- Verify structural consistency confirmed (section 4b PASS checks satisfied).
+- Verify structural consistency confirmed (section 4c PASS checks satisfied).
+- Routing-critical counts validated (section 4b).
+- Freshness is FRESH (section 5, Case A or B).
 - Archive MAY proceed.
-- Delegate to upstream OpenSpec archive (section 10).
+- Delegate to upstream OpenSpec archive (section 11).
 
 ## 7. Decision routing — DECISION: PASS_WITH_WARNINGS
 
 When the verify artifact records DECISION: PASS_WITH_WARNINGS:
 
 - All blocking checks passed, blocking findings = 0, warnings >= 1.
-- Verify structural consistency confirmed (section 4b PASS_WITH_WARNINGS
+- Verify structural consistency confirmed (section 4c PASS_WITH_WARNINGS
   checks satisfied).
+- Routing-critical counts validated (section 4b).
+- Freshness is FRESH (section 5, Case A or B).
 - Warnings MUST be surfaced to the human.
 - Archive MAY proceed ONLY after the human explicitly accepts or defers each
   warning.
@@ -257,14 +360,16 @@ dispositions.
 **Step 7d — Delegate:**
 
 After all warnings have a recorded disposition in the in-invocation ledger:
-delegate to upstream OpenSpec archive (section 10).
+delegate to upstream OpenSpec archive (section 11).
 
 ## 8. Decision routing — DECISION: FAIL
 
 When the verify artifact records DECISION: FAIL:
 
 - The verification audit actually ran and found blocking audit findings.
-- Verify structural consistency confirmed (section 4b FAIL checks satisfied).
+- Verify structural consistency confirmed (section 4c FAIL checks satisfied).
+- Routing-critical counts validated (section 4b).
+- Freshness is FRESH (section 5, Case A or B).
 - Archive SHALL NOT proceed unless the human explicitly overrides with reason.
 
 **Step 8a — Surface blocking findings:**
@@ -283,6 +388,10 @@ include:
 
 Without all three elements: archive is BLOCKED. Do NOT infer override from
 vague or partial input.
+
+A FAIL human override MUST NOT waive verify-result staleness or unknown
+applicability. If freshness is STALE or UNKNOWN: archive is BLOCKED regardless
+of the override. Override covers the FAIL decision gate only, not freshness.
 
 **Step 8c — Build in-invocation archive override ledger:**
 
@@ -311,7 +420,7 @@ goulart-archive MUST NOT:
 **Step 8d — Delegate:**
 
 After a valid override is recorded in the in-invocation ledger: delegate to
-upstream OpenSpec archive (section 10).
+upstream OpenSpec archive (section 11).
 
 ## 9. Raw OpenSpec boundary
 
@@ -331,7 +440,20 @@ goulart-archive MUST NOT disable, modify, or remove the raw escape hatch.
 When the user explicitly requests raw archive: inform them that raw execution
 does not satisfy Goulart compliance guarantees and proceed if they confirm.
 
-## 10. Delegate to upstream OpenSpec archive
+## 10. Decision preservation
+
+The verify decision is permanent. goulart-archive MUST NOT:
+
+- retroactively change PASS → PASS_WITH_WARNINGS or FAIL;
+- retroactively change PASS_WITH_WARNINGS → PASS;
+- retroactively change FAIL → PASS or PASS_WITH_WARNINGS;
+- remove or suppress findings from the verify artifact;
+- remove or suppress warnings from the verify artifact.
+
+Human override is an exception to the archive gate — not a modification of the
+verify decision itself.
+
+## 11. Delegate to upstream OpenSpec archive
 
 Before delegation, explicitly confirm the upstream archive integration exists:
 
@@ -372,19 +494,6 @@ its own checks independently.
 **Store and change context:** pass the resolved store and change context to the
 upstream skill (same `--store` flags, same change name). The upstream skill
 operates on the same change.
-
-## 11. Decision preservation
-
-The verify decision is permanent. goulart-archive MUST NOT:
-
-- retroactively change PASS → PASS_WITH_WARNINGS or FAIL;
-- retroactively change PASS_WITH_WARNINGS → PASS;
-- retroactively change FAIL → PASS or PASS_WITH_WARNINGS;
-- remove or suppress findings from the verify artifact;
-- remove or suppress warnings from the verify artifact.
-
-Human override is an exception to the archive gate — not a modification of the
-verify decision itself.
 
 ## 12. Reporting
 
@@ -436,10 +545,11 @@ encountered failure:
 - verify decision (if exists);
 - verify reviewed revision/paths;
 - structural consistency assessment;
-- freshness assessment;
-- blocking condition (stale verify, missing verify, malformed/inconsistent
-  verify, blocked prerequisites, missing warning dispositions, missing
-  override, missing upstream skill);
+- routing-critical count validation;
+- freshness assessment (including whether freshness is UNKNOWN);
+- blocking condition (stale verify, unknown freshness, missing verify,
+  malformed/inconsistent verify, blocked prerequisites, missing warning
+  dispositions, missing override, missing upstream skill);
 - exact next human actions.
 
 Do not phrase archive blocking as upstream archive failure.
