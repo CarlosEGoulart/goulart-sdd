@@ -15,9 +15,15 @@ Final lifecycle entry point:
 resolve change → locate verify artifact → validate structural consistency
 → validate routing-critical metadata → assess freshness → route on DECISION
 
-if PASS: delegate to OpenSpec archive
-if PASS_WITH_WARNINGS: require human warning dispositions → delegate to OpenSpec archive
-if FAIL: block archive unless explicit human override with reason → delegate to OpenSpec archive
+goulart-archive consumes an existing verify result. It NEVER performs
+verification. If verification is needed, the human must run goulart-verify
+in a separate invocation.
+
+if PASS + FRESH: delegate to OpenSpec archive
+if PASS_WITH_WARNINGS + FRESH: require human warning dispositions → delegate
+if FAIL + FRESH: block unless explicit human override with reason → delegate
+if STALE / UNKNOWN / malformed / missing: STOP → instruct human to re-run
+  goulart-verify separately
 ```
 
 ## 1. Authorization and ownership
@@ -39,13 +45,27 @@ goulart-archive MUST NOT:
 - invent a new schema field;
 - modify verify.md to add archive-stage decisions;
 - modify review artifacts;
-- invent a durable archive-decision file.
+- invent a durable archive-decision file;
+- perform verification;
+- execute verification tests or audits;
+- modify verify evidence;
+- invoke `goulart-verify` automatically;
+- retry verification inside the archive invocation.
+
+goulart-archive is a CONSUMER of an already-produced verify result. It may
+validate, assess freshness, block, or report — it MUST NOT produce a new
+verification result.
 
 goulart-archive MAY:
 
 - read all relevant artifacts (verify, code-review, test-plan, tasks, specs);
+- validate verify structural consistency (section 4);
+- assess whether the recorded verify result is still applicable / fresh
+  (section 5);
 - require human input (warning dispositions, override reason);
+- block archive when verify is stale, unknown, malformed, or contradictory;
 - build an in-invocation archive gate ledger for this invocation only;
+- tell the user what lifecycle action must happen next;
 - delegate to upstream OpenSpec archive after gate satisfaction;
 - report decision metadata and warnings.
 
@@ -251,8 +271,9 @@ Material verification-relevant changes occurred after the reviewed revision.
 
 → STALE
 → BLOCK
-→ require `goulart-verify` to be re-run before archive.
-Do NOT proceed to decision routing.
+→ instruct the human to run `goulart-verify` in a separate invocation before
+  archive can proceed.
+Do NOT proceed to decision routing. Do NOT perform verification.
 
 **Case D — revision/diff cannot faithfully represent the reviewed state:**
 
@@ -531,8 +552,34 @@ If the change has already been archived (directory moved to archive):
 - Do NOT attempt to re-archive.
 - Do NOT move files back and re-archive.
 
-If a verify artifact already exists and is fresh: use its decision directly.
-Do NOT re-run verification unless the verify result is stale.
+**Verify result applicability:**
+
+If verify result is FRESH:
+→ consume the existing decision normally. Proceed to decision routing.
+
+If verify result is STALE:
+→ STOP.
+→ do NOT perform verification.
+→ do NOT invoke `goulart-verify` automatically.
+→ instruct the human to run `goulart-verify` in a separate invocation or
+  context.
+→ archive may be retried only after a new completed verify result exists.
+
+If verify applicability is UNKNOWN / UNESTABLISHED:
+→ STOP.
+→ do NOT perform verification.
+→ instruct the human to provide sufficient evidence or run `goulart-verify`
+  separately.
+
+If verify is missing, malformed, contradictory, or prerequisite-blocked:
+→ STOP.
+→ do NOT attempt to repair or regenerate it.
+→ identify the required separate lifecycle action (e.g. run `goulart-verify`,
+  complete blocked prerequisites, correct malformed evidence).
+
+goulart-archive MUST NOT produce a new verification result under any
+circumstance. Verification is a separate lifecycle stage owned by
+`goulart-verify`.
 
 ## 14. Failure / stop reporting
 
