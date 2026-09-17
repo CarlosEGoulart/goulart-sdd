@@ -12,13 +12,13 @@ metadata:
 Final whole-change verification entry point:
 
 ```text
-resolve change → check prerequisites
+resolve change → check prerequisites → persist prerequisite evidence
 
 if ANY prerequisite blocked:
-    report block → STOP → no DECISION: FAIL
+    write prerequisite evidence to verify artifact → STOP → no DECISION: FAIL
 
 if all prerequisites pass:
-    perform audit → produce verify artifact → emit DECISION → STOP
+    perform audit → write full verify artifact → emit DECISION → STOP
 ```
 
 ## 1. Authorization and ownership
@@ -40,8 +40,9 @@ Verifier MAY:
 - inspect Git revision/diff history;
 - run tests/validation commands;
 - perform semantic evaluation;
-- write the resolved verify artifact ONLY when verification prerequisites
-  permit the audit and a verify result is being produced.
+- write the resolved verify artifact to persist prerequisite evidence before
+  the audit when the authoritative verify instruction requires it;
+- write the full resolved verify artifact after the audit completes.
 
 Verifier MUST NOT:
 
@@ -102,7 +103,7 @@ The flow is:
 resolve change
 → inspect prerequisite evidence
 → if ANY mandatory prerequisite is blocked:
-     REPORT BLOCK
+     persist prerequisite evidence to verify artifact
      DO NOT run final verification audit
      DO NOT emit DECISION: FAIL
      DO NOT invent PASS/PASS_WITH_WARNINGS
@@ -113,7 +114,7 @@ Only when prerequisites permit:
 
 ```text
 perform audit
-→ produce verify artifact
+→ write full verify artifact
 → emit final DECISION
 ```
 
@@ -125,9 +126,10 @@ actually ran and found blocking audit findings. Do not collapse these states.
 Code-review artifact MUST exist at its actual resolved path. Artifact
 existence alone is insufficient.
 
-If missing: STOP. Report code-review prerequisite blocked. Next action should
-identify that code review must be completed through the proper review workflow.
-Do NOT generate code-review yourself.
+If missing: persist the BLOCKED prerequisite evidence to the verify artifact.
+Report code-review prerequisite blocked. Next action should identify that code
+review must be completed through the proper review workflow. Do NOT generate
+code-review yourself. Do NOT emit DECISION: FAIL.
 
 ## 5. Prerequisite — code-review verdict permits
 
@@ -161,8 +163,8 @@ Important invariants:
 Never invent ACCEPT, REJECT, DEFER, justification, override, or override
 reason.
 
-If code-review state does not permit verify: STOP as prerequisite blocking.
-Do NOT emit FAIL.
+If code-review state does not permit verify: persist the BLOCKED prerequisite
+evidence to the verify artifact. Do NOT emit FAIL. STOP.
 
 ## 6. Prerequisite — mandatory finding triage
 
@@ -178,7 +180,8 @@ Do not treat REJECT or DEFER as an implicit override.
 If a finding remains blocking under its recorded state: verification is blocked
 unless an exact permitted explicit human override covers that condition.
 
-If any mandatory finding triage is missing/incomplete: STOP.
+If any mandatory finding triage is missing/incomplete: persist the BLOCKED
+prerequisite evidence to the verify artifact. STOP. Do NOT emit DECISION: FAIL.
 
 This prerequisite is NON-WAIVABLE by a general review override.
 
@@ -192,8 +195,9 @@ be complete.
 
 Do not assume code-review existence proves task completion.
 
-If ANY task remains incomplete: STOP. Report the exact incomplete task(s).
-Do NOT check them, implement them, or emit FAIL.
+If ANY task remains incomplete: persist the BLOCKED prerequisite evidence to
+the verify artifact. Report the exact incomplete task(s). Do NOT check them,
+implement them, or emit FAIL.
 
 Task completion is mandatory and non-waivable by review override.
 
@@ -205,13 +209,21 @@ Read every REQUIRED test-plan entry. A final evaluable state means:
 - MECHANICAL: a completed check is recorded; a result is recorded.
 - SEMANTIC: a documented evaluation exists.
 
-Pending or unevaluated required entries: prerequisite BLOCK → STOP.
+Pending or unevaluated required entries: persist the BLOCKED prerequisite
+evidence to the verify artifact. Do NOT run the audit. Do NOT emit a final
+decision.
 
 Important: EVALUABLE does NOT mean PASSING. A required entry may be evaluable
 and record a failure. That does not block the audit from starting merely
 because it is a failure. Instead: prerequisite = evaluable; audit examines the
 result; a failing required validation becomes an audit finding and can lead to
 FAIL.
+
+Distinction between prerequisite block and audit finding for SEMANTIC entries:
+a SEMANTIC entry with NO documented evaluation at all = prerequisite BLOCK (no
+audit). A SEMANTIC entry with an evaluation but insufficient evidence =
+evaluable prerequisite; the audit will assess evidence sufficiency and may
+produce a blocking finding.
 
 Do NOT turn a test failure into an "unevaluable" prerequisite. Do NOT modify
 test-plan.
@@ -225,7 +237,8 @@ For ANY applicable review artifact recorded as Degraded, require BOTH:
 
 A degraded review MUST NOT be represented as independent.
 
-Missing disclosure or acknowledgement: prerequisite BLOCK → STOP.
+Missing disclosure or acknowledgement: persist the BLOCKED prerequisite
+evidence to the verify artifact. STOP. Do NOT emit DECISION: FAIL.
 
 Do not change review mode from verifier context.
 
@@ -245,8 +258,9 @@ SEMANTIC_FALLBACK.
 
 NEVER use filesystem timestamps as freshness evidence.
 
-If freshness cannot be established conservatively: STOP and report the evidence
-gap.
+If freshness cannot be established conservatively: persist the BLOCKED
+prerequisite evidence to the verify artifact. Report the evidence gap. STOP.
+Do NOT emit DECISION: FAIL.
 
 ## 11. Plan-review staleness lineage
 
@@ -358,24 +372,57 @@ failures are blocking audit findings.
 MECHANICAL: perform/confirm the mechanical check; required failures are
 blocking audit findings.
 
-SEMANTIC: perform the required documented semantic evaluation; record evidence.
+SEMANTIC: independently assess every required SEMANTIC entry. Require:
+
+- documented semantic evaluation exists;
+- Semantic Evaluator / actual evaluator evidence is present where defined by
+  the test-plan contract (see Semantic Entry Detail);
+- evaluation evidence is present;
+- the evidence is sufficient to assess the mapped requirement/scenario;
+- no human/evaluator result is fabricated.
+
+If semantic evidence demonstrates the required behavior is SATISFIED: record
+the semantic validation as passing/satisfied with evidence.
+
+If semantic evidence demonstrates required behavior is UNMET: record a
+BLOCKING audit finding. That blocking finding contributes to DECISION: FAIL.
+
+If an evaluation record exists but the supplied evidence is insufficient to
+determine whether the mapped required behavior is satisfied: do NOT pretend it
+passed. Record the evidence deficiency and treat required behavior as not
+successfully verified; classify it as a BLOCKING audit finding.
 
 Do not invent automated tests for semantic/mechanical entries. Do not silently
-change validation type. Do not weaken a failing check.
+change validation type from SEMANTIC to AUTOMATED or MECHANICAL. Do not weaken
+a failing check.
 
 ## 18. Audit — full test suite
 
-If the project/change has a meaningful applicable complete test-suite
-command: RUN IT DURING VERIFICATION. Record command, result, evidence.
+Successful verification requires the applicable complete suite to pass at
+verification time. Historical CI output, old implementation-time test output,
+or code-review assertions DO NOT replace verification-time execution.
 
-Historical CI output, old implementation-time test output, or code-review
-assertions DO NOT replace verification-time execution.
+**Case A — meaningful applicable complete test-suite command EXISTS:**
 
-If no meaningful complete-suite command exists: do NOT invent one. Record that
-no meaningful complete-suite command exists and supporting rationale/evidence.
+Execute it during the audit. Record command, result, evidence.
 
-If a meaningful complete suite exists but cannot be executed: do not falsely
-report PASS. Record the actual limitation and classify its impact.
+- If it executes and passes: record command/result/evidence and continue.
+- If it executes and fails: record a BLOCKING audit finding. Final result
+  must be DECISION: FAIL unless that finding is overturned by a later
+  authoritative process.
+- If it exists but CANNOT be executed: record the exact command that should
+  have run, record why it could not be executed, record the missing
+  verification evidence. Create a BLOCKING audit finding because required
+  test integrity could not be established. Final result must be
+  DECISION: FAIL. Do NOT produce PASS or PASS_WITH_WARNINGS when an
+  applicable required complete suite exists but its passing result was not
+  established during this verification.
+
+**Case B — NO meaningful applicable complete-suite command exists:**
+
+Do NOT invent one. Record that no applicable complete-suite command exists.
+Record rationale/evidence supporting that conclusion. Absence of a nonexistent
+suite alone is not a failure and does not force FAIL.
 
 ## 19. Audit — behavioral coverage integrity
 
@@ -423,22 +470,66 @@ Archive must not normally proceed from FAIL.
 Write the verify artifact using the actual resolved verify output path and the
 approved verify template/contract. Record at minimum:
 
-- Prerequisites Checked;
-- Reviewed State / Revision / Paths;
-- Task Completion;
-- Spec Compliance;
-- Test Integrity / Validation Results;
-- Full Test Suite;
-- Behavioral Coverage Integrity;
-- Plan Review Staleness;
-- Code Review Staleness;
-- Review Overrides;
-- Scope Drift;
-- Findings / Warnings;
-- DECISION;
-- Decision Summary / Metadata.
+**Prerequisites Checked:** for each mandatory prerequisite, record Status
+(SATISFIED | BLOCKED), Evidence, and Blocking Gap.
 
-Timestamp is informational ONLY. Never use timestamp as freshness evidence.
+**Reviewed State:** Reviewed Revision, Base Revision (when useful for diff
+evidence), Timestamp (informational only — MUST NOT be freshness evidence),
+Reviewed Paths / Artifacts.
+
+**Task Completion:** Total Tasks, Completed Tasks, Incomplete Tasks, Evidence.
+
+**Spec Compliance:** for each required scenario, record Spec Path, Requirement,
+Scenario, Result (SATISFIED | UNMET), Evidence/Finding.
+
+**Test Integrity — Validation Results:** for each required entry, record
+Entry, Type (AUTOMATED | MECHANICAL | SEMANTIC), Validation, Result,
+Evidence.
+
+**Test Integrity — Full Test Suite:** Command, Result, Evidence.
+
+**Test Integrity — Behavioral Coverage Integrity:** Coverage Reduction
+Detected, and for each affected entry: Entry, Change, Coverage Impact, Spec
+Amendment, Rationale.
+
+**Review Staleness — Plan Review:** Reviewed Revision, Reviewed Paths,
+Changes After Review, Affected Paths, Materiality, Materiality Rationale,
+Assessment Method (REVISION_DIFF | SEMANTIC_FALLBACK), Assessment Evidence,
+Freshness Result (FRESH | STALE), Re-review Required, Override Invoked,
+Condition Waived, Override Reason.
+
+**Review Staleness — Code Review:** Reviewed Revision, Reviewed Paths,
+Changes After Review, Affected Paths, Materiality, Materiality Rationale,
+Assessment Method, Assessment Evidence, Freshness Result, Re-review Required,
+Accepted Finding Caused Material Change, Round Limit State, Override Invoked,
+Condition Waived, Override Reason.
+
+**Review Overrides:** for each relevant review: Review, Condition Waived,
+Override Invoked, Reason, Freshness Result.
+
+**Scope Drift:** Path/Area, Drift (NONE | DETECTED), Description, Impact
+(NON_BLOCKING | BLOCKING).
+
+**Findings / Warnings:** ID, Type (BLOCKING | WARNING), Area, Description,
+Evidence.
+
+**Decision:** DECISION (PASS | PASS_WITH_WARNINGS | FAIL).
+
+**Decision Metadata (exact fields required after a completed audit):**
+
+- Reviewed Revision;
+- Decision Summary;
+- Blocking Finding Count;
+- Warning Count;
+- Verification Evidence Paths.
+
+The counts must match the actual findings/warnings recorded in the artifact.
+Verification Evidence Paths must identify the actual evidence used by the
+completed audit. Preserve Base Revision when useful for diff evidence.
+
+For prerequisite BLOCK before the audit: do NOT fabricate final Decision
+Metadata that implies a completed audit. Record prerequisite evidence only as
+required by the partial blocked artifact.
 
 Ensure plan and code staleness remain distinct, override remains distinct from
 freshness, and accepted-finding material code fixes are represented in
@@ -449,9 +540,15 @@ code-review lineage.
 The verifier's durable methodology write is ONLY the resolved verify artifact.
 Do not modify reviewed evidence to make verification pass.
 
-If a prerequisite block occurs before verification: do not fabricate a
-completed verify result merely to record the block. Report the block to the
-user and STOP.
+The verifier MAY write prerequisite evidence to the verify artifact before the
+audit when the authoritative verify instruction requires it. A partially
+populated blocked verify artifact is NOT a completed verify result — it is
+persistent prerequisite evidence.
+
+When a prerequisite block occurs: persist the prerequisite evidence to the
+verify artifact with Status: BLOCKED and the exact Blocking Gap for each
+assessed prerequisite. Do NOT fabricate a final DECISION. Do NOT invent
+PASS/PASS_WITH_WARNINGS. STOP.
 
 ## 25. Raw OpenSpec boundary
 
@@ -472,7 +569,8 @@ relevant repository changes.
 
 ## 27. Failure / stop reporting
 
-On prerequisite BLOCK report:
+On prerequisite BLOCK: prerequisite evidence has been persisted to the verify
+artifact. Report:
 
 - change;
 - store/planning home;
