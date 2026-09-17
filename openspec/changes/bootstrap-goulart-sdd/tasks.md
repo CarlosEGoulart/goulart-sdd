@@ -44,7 +44,7 @@
 
 ## 7. goulart-verify Adapter
 
-- [ ] 7.1 Create `.opencode/skills/goulart-verify/SKILL.md` that independently blocks on missing/non-permitting code-review, incomplete mandatory triage, incomplete tasks, unevaluable test-plan entries, or unresolved stale-review gates; assess recorded review exceptions without claiming freshness, then audit spec compliance, all three validation types, and two-lineage staleness (including accepted-finding fixes) and produce DECISION/reviewed metadata; verify prerequisite-blocking and result-production scenarios match the verification spec
+- [x] 7.1 Create `.opencode/skills/goulart-verify/SKILL.md` that independently blocks on missing/non-permitting code-review, incomplete mandatory triage, incomplete tasks, unevaluable test-plan entries, or unresolved stale-review gates; assess recorded review exceptions without claiming freshness, then audit spec compliance, all three validation types, and two-lineage staleness (including accepted-finding fixes) and produce DECISION/reviewed metadata; verify prerequisite-blocking and result-production scenarios match the verification spec
 - [ ] 7.2 Create `.opencode/commands/goulart-verify.md` command file that invokes the goulart-verify skill and verify the file exists
 
 ## 8. goulart-archive Adapter
