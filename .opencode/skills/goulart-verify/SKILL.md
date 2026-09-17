@@ -286,6 +286,48 @@ If freshness cannot be established conservatively: record BLOCKED with the
 evidence gap. Move on to record any other prerequisite results already
 established.
 
+## 10a. Prerequisite — review override (if applicable)
+
+The verify template includes a "Review override (if applicable)" prerequisite
+row. Define deterministic status semantics:
+
+**CASE A — no override required/invoked:**
+
+Record Status: SATISFIED. Evidence: "no override applicable". Blocking Gap:
+none.
+
+**CASE B — valid applicable override covering the exact stale/blocking
+condition:**
+
+Record Status: SATISFIED. Evidence must include all stage-specific evidence:
+
+- actual human-owned override;
+- exact waived condition;
+- mandatory reason;
+- affected input/state where required by the relevant contract;
+- applicability to the actual stale/blocking condition.
+
+If review remains stale despite the override: Freshness Result stays STALE.
+Override is an exception to the gate, never freshness.
+
+**CASE C — override required/claimed but incomplete or invalid:**
+
+Record Status: BLOCKED. Evidence: existing evidence. Blocking Gap: exact
+missing or mismatched evidence.
+
+Do NOT infer override from APPROVE, ACCEPT, REJECT, or DEFER alone.
+
+Override cannot replace:
+
+- code-review existence;
+- mandatory triage;
+- task completion;
+- test-plan evaluability;
+- degraded-review acknowledgement.
+
+The override prerequisite row participates in the same aggregate prerequisite
+assessment as all other rows.
+
 ## 11. Plan-review staleness lineage
 
 Compare current proposal/specs/design against the state recorded as reviewed
@@ -321,7 +363,9 @@ of the finding does NOT mean the modified implementation has been reviewed.
 
 Normal progression requires a new code-review unless an exact permitted
 code-review override covers the required condition. At the bounded round
-limit: STOP/escalate. Do NOT invent Round 3.
+limit: record the relevant prerequisite as BLOCKED with Round Limit State /
+escalation evidence. Do NOT invent Round 3. Continue evaluating all other
+independent prerequisites. Persist the complete prerequisite table, then STOP.
 
 Non-material post-review implementation corrections may avoid re-review only
 with clear recorded justification. Verifier must assess that justification
@@ -359,8 +403,10 @@ separately from freshness.
 ## 14. Review round / escalation evidence
 
 Where plan-review or code-review bounded round state is relevant, respect
-ROUND 1 | 2. Round 2 requiring another review → STOP/escalate, no automatic
-Round 3, no history reset.
+ROUND 1 | 2. Round 2 requiring another review: record the relevant prerequisite
+as BLOCKED with escalation evidence. Do NOT create Round 3. Do NOT
+immediately STOP the prerequisite phase — continue assessing all other
+independent prerequisites. Persist the complete prerequisite table, then STOP.
 
 Do not allow verifier to manufacture a new review round. If an actual human
 exception exists, consume it only if the underlying stage contract permits it
