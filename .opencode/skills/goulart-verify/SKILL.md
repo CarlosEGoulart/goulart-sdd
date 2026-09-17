@@ -12,10 +12,10 @@ metadata:
 Final whole-change verification entry point:
 
 ```text
-resolve change → check prerequisites → persist prerequisite evidence
+resolve change → assess ALL safely-evaluable prerequisites → persist prerequisite evidence
 
 if ANY prerequisite blocked:
-    write prerequisite evidence to verify artifact → STOP → no DECISION: FAIL
+    STOP → no audit → no DECISION
 
 if all prerequisites pass:
     perform audit → write full verify artifact → emit DECISION → STOP
@@ -95,22 +95,31 @@ verifier context.
 
 ## 3. Prerequisite blocking is NOT audit failure
 
-This distinction is mandatory.
+This distinction is mandatory. The prerequisite phase MUST NOT short-circuit
+at the first blocked condition. Independently assess every mandatory
+prerequisite that can safely be evaluated, record each result, and only STOP
+once the prerequisite table is as complete as safely possible.
 
 The flow is:
 
 ```text
 resolve change
-→ inspect prerequisite evidence
-→ if ANY mandatory prerequisite is blocked:
-     persist prerequisite evidence to verify artifact
+→ independently assess every mandatory prerequisite
+→ for each prerequisite:
+     if upstream artifact is missing and the prerequisite depends on it:
+       record Status: BLOCKED, Blocking Gap: cannot assess because <upstream> is missing
+     else:
+       assess against actual evidence, record SATISFIED or BLOCKED with evidence
+→ persist the complete prerequisite evidence to verify artifact
+→ if ANY prerequisite is BLOCKED:
+     report ALL blocked prerequisites together
      DO NOT run final verification audit
      DO NOT emit DECISION: FAIL
      DO NOT invent PASS/PASS_WITH_WARNINGS
      STOP
 ```
 
-Only when prerequisites permit:
+Only when ALL prerequisites are SATISFIED:
 
 ```text
 perform audit
@@ -126,17 +135,22 @@ actually ran and found blocking audit findings. Do not collapse these states.
 Code-review artifact MUST exist at its actual resolved path. Artifact
 existence alone is insufficient.
 
-If missing: persist the BLOCKED prerequisite evidence to the verify artifact.
-Report code-review prerequisite blocked. Next action should identify that code
-review must be completed through the proper review workflow. Do NOT generate
-code-review yourself. Do NOT emit DECISION: FAIL.
+Record Status: SATISFIED if present with evidence, or BLOCKED with Blocking Gap
+explaining the absence.
+
+If missing: next action should identify that code review must be completed
+through the proper review workflow. Do NOT generate code-review yourself.
 
 ## 5. Prerequisite — code-review verdict permits
 
 Consume the ACTUAL approved code-review contract. Do not invent a simplified
 verdict mapping.
 
-Validate together:
+If code-review artifact is missing: record Status: BLOCKED, Blocking Gap:
+cannot assess because code-review artifact is missing. Do NOT invent a verdict
+result. Move on to assess other prerequisites that do not depend on code-review.
+
+If code-review artifact exists: validate together:
 
 - verdict;
 - findings;
@@ -163,12 +177,18 @@ Important invariants:
 Never invent ACCEPT, REJECT, DEFER, justification, override, or override
 reason.
 
-If code-review state does not permit verify: persist the BLOCKED prerequisite
-evidence to the verify artifact. Do NOT emit FAIL. STOP.
+Record Status: SATISFIED if verdict permits, or BLOCKED with evidence and
+Blocking Gap if it does not.
 
 ## 6. Prerequisite — mandatory finding triage
 
 When code-review findings exist, validate EACH finding's human triage.
+
+If code-review artifact is missing: record Status: BLOCKED, Blocking Gap:
+cannot assess because code-review artifact is missing. Move on to assess other
+independent prerequisites.
+
+If code-review findings exist: validate EACH finding's human triage.
 
 Allowed triage values from the authoritative code-review contract: ACCEPT,
 REJECT, DEFER.
@@ -180,8 +200,8 @@ Do not treat REJECT or DEFER as an implicit override.
 If a finding remains blocking under its recorded state: verification is blocked
 unless an exact permitted explicit human override covers that condition.
 
-If any mandatory finding triage is missing/incomplete: persist the BLOCKED
-prerequisite evidence to the verify artifact. STOP. Do NOT emit DECISION: FAIL.
+Record Status: SATISFIED if all findings triaged (or no findings), or BLOCKED
+with evidence and Blocking Gap if triage is incomplete.
 
 This prerequisite is NON-WAIVABLE by a general review override.
 
@@ -195,9 +215,10 @@ be complete.
 
 Do not assume code-review existence proves task completion.
 
-If ANY task remains incomplete: persist the BLOCKED prerequisite evidence to
-the verify artifact. Report the exact incomplete task(s). Do NOT check them,
-implement them, or emit FAIL.
+Record Status: SATISFIED if all tasks complete with evidence, or BLOCKED with
+Blocking Gap listing exact incomplete task(s).
+
+Do NOT check incomplete tasks, implement them, or emit FAIL.
 
 Task completion is mandatory and non-waivable by review override.
 
@@ -209,9 +230,8 @@ Read every REQUIRED test-plan entry. A final evaluable state means:
 - MECHANICAL: a completed check is recorded; a result is recorded.
 - SEMANTIC: a documented evaluation exists.
 
-Pending or unevaluated required entries: persist the BLOCKED prerequisite
-evidence to the verify artifact. Do NOT run the audit. Do NOT emit a final
-decision.
+Record Status: SATISFIED if all required entries are evaluable, or BLOCKED
+with Blocking Gap listing the unevaluated entries.
 
 Important: EVALUABLE does NOT mean PASSING. A required entry may be evaluable
 and record a failure. That does not block the audit from starting merely
@@ -237,8 +257,8 @@ For ANY applicable review artifact recorded as Degraded, require BOTH:
 
 A degraded review MUST NOT be represented as independent.
 
-Missing disclosure or acknowledgement: persist the BLOCKED prerequisite
-evidence to the verify artifact. STOP. Do NOT emit DECISION: FAIL.
+Record Status: SATISFIED if disclosure and acknowledgement both exist, or
+BLOCKED with Blocking Gap if either is missing.
 
 Do not change review mode from verifier context.
 
@@ -258,9 +278,13 @@ SEMANTIC_FALLBACK.
 
 NEVER use filesystem timestamps as freshness evidence.
 
-If freshness cannot be established conservatively: persist the BLOCKED
-prerequisite evidence to the verify artifact. Report the evidence gap. STOP.
-Do NOT emit DECISION: FAIL.
+Record Status: SATISFIED if freshness assessed and either FRESH or covered by
+permitted override, or BLOCKED with Blocking Gap explaining the evidence gap or
+stale condition.
+
+If freshness cannot be established conservatively: record BLOCKED with the
+evidence gap. Move on to record any other prerequisite results already
+established.
 
 ## 11. Plan-review staleness lineage
 
@@ -342,10 +366,11 @@ Do not allow verifier to manufacture a new review round. If an actual human
 exception exists, consume it only if the underlying stage contract permits it
 and the exception covers the exact condition.
 
-## 15. Only after prerequisites pass — start audit
+## 15. Only after ALL prerequisites pass — start audit
 
-After ALL mandatory prerequisites permit verification, perform the whole-
-change audit. Before this point: do NOT manufacture a final DECISION.
+After the complete prerequisite assessment is finished and ALL mandatory
+prerequisites are SATISFIED, persist the prerequisite evidence and perform the
+whole-change audit. Before this point: do NOT manufacture a final DECISION.
 
 ## 16. Audit — spec compliance
 
@@ -407,14 +432,17 @@ or code-review assertions DO NOT replace verification-time execution.
 Execute it during the audit. Record command, result, evidence.
 
 - If it executes and passes: record command/result/evidence and continue.
-- If it executes and fails: record a BLOCKING audit finding. Final result
-  must be DECISION: FAIL unless that finding is overturned by a later
-  authoritative process.
+- If it executes and fails: record a BLOCKING audit finding. This completed
+  verification audit MUST emit DECISION: FAIL. The goulart-verify invocation
+  itself MUST NOT convert that FAIL to PASS or PASS_WITH_WARNINGS through a
+  human exception. Any later archive-stage human override is outside
+  goulart-verify and does NOT retroactively change the recorded verify
+  decision or remove the blocking finding from this audit.
 - If it exists but CANNOT be executed: record the exact command that should
   have run, record why it could not be executed, record the missing
   verification evidence. Create a BLOCKING audit finding because required
-  test integrity could not be established. Final result must be
-  DECISION: FAIL. Do NOT produce PASS or PASS_WITH_WARNINGS when an
+  test integrity could not be established. This completed verification audit
+  MUST emit DECISION: FAIL. Do NOT produce PASS or PASS_WITH_WARNINGS when an
   applicable required complete suite exists but its passing result was not
   established during this verification.
 
@@ -545,9 +573,10 @@ audit when the authoritative verify instruction requires it. A partially
 populated blocked verify artifact is NOT a completed verify result — it is
 persistent prerequisite evidence.
 
-When a prerequisite block occurs: persist the prerequisite evidence to the
-verify artifact with Status: BLOCKED and the exact Blocking Gap for each
-assessed prerequisite. Do NOT fabricate a final DECISION. Do NOT invent
+When prerequisite assessment is complete and ANY prerequisite is BLOCKED:
+write/update the resolved verify artifact with ALL assessed prerequisite
+evidence — both SATISFIED and BLOCKED rows — with Status, Evidence, and
+Blocking Gap for each. Do NOT fabricate a final DECISION. Do NOT invent
 PASS/PASS_WITH_WARNINGS. STOP.
 
 ## 25. Raw OpenSpec boundary
@@ -570,21 +599,27 @@ relevant repository changes.
 ## 27. Failure / stop reporting
 
 On prerequisite BLOCK: prerequisite evidence has been persisted to the verify
-artifact. Report:
+artifact. Report the COMPLETE assessed gate state — not merely the first
+encountered failure:
 
 - change;
 - store/planning home;
-- exact blocked prerequisite(s);
-- code-review verdict/triage state;
-- incomplete tasks, if any;
-- unevaluable test-plan entries, if any;
+- every blocked prerequisite with its Blocking Gap;
+- every satisfied prerequisite;
+- dependencies that prevented assessment (e.g. "cannot assess because
+  code-review artifact is missing");
+- code-review verdict/triage state where available;
+- task state;
+- test-plan evaluability state;
 - plan-review freshness state;
 - code-review freshness state;
-- relevant override evidence;
-- degraded-review evidence;
-- exact next human action;
-- explicitly say "verification audit did NOT run and no DECISION: FAIL was
-  emitted."
+- degraded evidence;
+- override evidence;
+- exact next human actions;
+- explicitly state: "verification audit did NOT run and no final verification
+  DECISION was emitted."
+
+Do not phrase prerequisite blocking as DECISION: FAIL.
 
 On audit FAIL report:
 
