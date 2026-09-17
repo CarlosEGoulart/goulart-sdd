@@ -1,13 +1,35 @@
 schema: goulart-sdd
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Goulart SDD is an opinionated Spec-Driven Development methodology built on
+  top of the official OpenSpec engine.
+
+  Purpose:
+  - Add disciplined lifecycle sequencing, explicit human gates, TDD,
+    independent review, focused implementation tasks, and final verification
+    while using OpenSpec as the underlying specification engine.
+  - Keep the methodology tool-agnostic where practical, with OpenCode as the
+    first reference coding-agent adapter.
+
+  Ownership:
+  - OpenSpec owns the CLI, schema engine, artifact graph, validation, generated
+    opsx-* commands, generated openspec-* skills, and archive mechanics.
+  - Goulart SDD owns the custom goulart-sdd schema, methodology documentation,
+    project configuration, and goulart-* adapter entry points.
+  - Generated upstream OpenSpec commands and skills must not be manually
+    customized as Goulart implementation points.
+
+  Constraints:
+  - Do not fork, vendor, or modify the OpenSpec CLI for this methodology.
+  - Goulart-compliant execution uses goulart-* lifecycle entry points and
+    honors their STOP boundaries and human decisions.
+  - Raw OpenSpec commands remain available as escape hatches but may bypass
+    Goulart gates and must not be represented as Goulart-compliant execution.
+  - Human authority is preserved; review and archive exceptions must remain
+    explicit and must not be silently inferred.
+  - Do not require a specific LLM provider or model.
+  - The light workflow profile, additional coding-agent adapters, and broader
+    CI enforcement are deferred.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

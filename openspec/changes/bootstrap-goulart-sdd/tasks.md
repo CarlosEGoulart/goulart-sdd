@@ -54,7 +54,7 @@
 
 ## 9. Project Configuration
 
-- [ ] 9.1 Update `openspec/config.yaml` with project context describing Goulart SDD, its purpose, and constraints, and verify the file is valid YAML
+- [x] 9.1 Update `openspec/config.yaml` with project context describing Goulart SDD, its purpose, and constraints, and verify the file is valid YAML
 - [ ] 9.2 Add per-artifact rules to `openspec/config.yaml` for `specs` (require SHALL/MUST, every scenario must be testable) and `tasks` (TDD ordering, small tasks), and verify the config file parses correctly
 
 ## 10. Methodology Documentation
