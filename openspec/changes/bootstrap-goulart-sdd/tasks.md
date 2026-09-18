@@ -71,6 +71,6 @@ These are lightweight adapter/schema smoke checks; documented manual evaluation 
 - [x] 11.3 Smoke test planning gate: run `goulart-plan` on the test change, verify it creates proposal/specs/design and stops before plan-review/test-plan/tasks
 - [x] 11.4 Smoke test apply gate: on a temporary change without valid plan-review/human acceptance, verify `goulart-apply` refuses implementation
 - [x] 11.5 Smoke test archive gate: on a temporary change without valid verify state, verify `goulart-archive` refuses archive delegation
-- [ ] 11.6 Smoke test planning continuation: prepare a valid plan-review with permitted human acceptance after the initial planning stop; invoke goulart-plan again and verify it creates/continues test-plan and tasks, reports planning complete, STOPs, and identifies goulart-apply as the next step without executing it
+- [x] 11.6 Smoke test planning continuation: prepare a valid plan-review with permitted human acceptance after the initial planning stop; invoke goulart-plan again and verify it creates/continues test-plan and tasks, reports planning complete, STOPs, and identifies goulart-apply as the next step without executing it
 - [ ] 11.7 After planning smoke checks populate the test change, run `openspec validate dogfood-test` and confirm no blocking errors, recording any warnings
 - [ ] 11.8 Clean up temporary dogfood change directories after verification
