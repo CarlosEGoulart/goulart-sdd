@@ -2,26 +2,30 @@
 
 ## Review Metadata
 
-**Review Mode:** Degraded
+**Review Mode:** Independent
 
-**Reviewer Context/Session:** Degraded — same session as author (no fresh context available)
+**Reviewer Context/Session:** User-managed separate clean session
 
 **Degraded Review Disclosure:**
-This review was conducted in the same session that authored the planning artifacts. No separate/fresh context or user-managed clean session was available. The review is therefore degraded and MUST NOT be described as independent.
 
 - [x] Degraded review limitation disclosed (required if Degraded mode)
-- [ ] Human acknowledgement of degraded-review limitation recorded (required if Degraded mode)
+- [x] Human acknowledgement of degraded-review limitation recorded (required if Degraded mode)
 
 ---
 
 ## Review Round
 
-**ROUND:** 1
+**ROUND:** 2
 
 **Previous Round Outcome:**
 
 ```
-N/A — first round
+ROUND 1 — APPROVE_WITH_CHANGES
+10 findings: F-001 (Critical, compliance), F-002 (Moderate, quality), F-003 (Critical, quality),
+F-004 (Moderate, scope), F-005 (Moderate, compliance), F-006–F-010 (Suggestions).
+3 Required Changes: RC-001 (MATERIAL), RC-002 (NON_MATERIAL), RC-003 (MATERIAL) — all Applied: No.
+Human disposition: STATUS: REVISE — apply RC-001, RC-002, RC-003 in a fresh author/planning session.
+Reason for Round 2: Author applied all three Required Changes in commit 196b2ab; material corrections require re-review.
 ```
 
 ---
@@ -33,173 +37,112 @@ N/A — first round
 **Proposal:**
 
 - Path: `openspec/changes/v0-2-cli-installer/proposal.md`
-- Revision/Commit: b093d53
+- Revision/Commit: 196b2ab
 
 **Specs:**
 
-| Spec Path | Revision/Commit |
-|---|---|
-| `openspec/changes/v0-2-cli-installer/specs/cli-contract/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/goulart-init/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/coding-agent-selection/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/opencode-adapter/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/project-state/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/safe-initialization/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/workflow-engine/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/openspec-engine/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/installation-tests/spec.md` | b093d53 |
-| `openspec/changes/v0-2-cli-installer/specs/product-documentation/spec.md` | b093d53 |
+| Spec Path | Revision/Commit | Material Change from b093d53 |
+|---|---|---|
+| `openspec/changes/v0-2-cli-installer/specs/cli-contract/spec.md` | 196b2ab | Yes — package/binary name clarified; v0.2 scope (`init` only) noted |
+| `openspec/changes/v0-2-cli-installer/specs/coding-agent-selection/spec.md` | 196b2ab | Yes — placeholder vs functional agent clarified; error scenario added |
+| `openspec/changes/v0-2-cli-installer/specs/goulart-init/spec.md` | b093d53 | No |
+| `openspec/changes/v0-2-cli-installer/specs/installation-tests/spec.md` | 196b2ab | Yes — `workflowEngine` added to config validation |
+| `openspec/changes/v0-2-cli-installer/specs/opencode-adapter/spec.md` | b093d53 | No |
+| `openspec/changes/v0-2-cli-installer/specs/openspec-engine/spec.md` | b093d53 | No |
+| `openspec/changes/v0-2-cli-installer/specs/product-documentation/spec.md` | 196b2ab | Yes — workflow diagram format scenario added |
+| `openspec/changes/v0-2-cli-installer/specs/project-state/spec.md` | 196b2ab | Yes — `workflowEngine` added to required config fields |
+| `openspec/changes/v0-2-cli-installer/specs/safe-initialization/spec.md` | 196b2ab | Yes — config schema evolution requirement added |
+| `openspec/changes/v0-2-cli-installer/specs/workflow-engine/spec.md` | 196b2ab | Yes — all 6 interface methods enumerated with descriptions |
 
 **Design:**
 
 - Path: `openspec/changes/v0-2-cli-installer/design.md`
-- Revision/Commit: b093d53
+- Revision/Commit: 196b2ab
 
 **Additional Reviewed Paths:**
 
 | Path | Revision/Commit | Reason |
 |---|---|---|
-| `openspec/config.yaml` | b093d53 | Verify schema/context constraints |
+| `openspec/config.yaml` | 196b2ab | Verify schema/context constraints |
+
+---
+
+## Required Changes — Round 1 Resolution Verification
+
+### RC-001 (MATERIAL) — Config schema conflict
+
+**Status: RESOLVED**
+
+`project-state/spec.md` now lists `workflowEngine` as a required field in `.goulart/config.yaml` (line 23). `workflow-engine/spec.md` requires the same field (line 36). `installation-tests/spec.md` config validation scenario includes all four fields (line 26). All three specs agree on the canonical config shape: `schema`, `agent`, `adapterVersion`, `workflowEngine`.
+
+### RC-002 (NON_MATERIAL) — Inquirer reference
+
+**Status: RESOLVED**
+
+`design.md` line 41 now reads "supports subcommands and interactive prompts via `prompts`". The stale `inquirer` reference has been removed.
+
+### RC-003 (MATERIAL) — WorkflowEngine interface methods
+
+**Status: RESOLVED**
+
+`design.md` now enumerates all 6 methods with full TypeScript signatures, descriptions, and a rejected alternative explaining why methodology-stage methods are excluded (lines 76–100). `workflow-engine/spec.md` now lists all 6 methods with descriptions in the "Interface defined" scenario (lines 12–18). The interface contract is explicit and unambiguous.
 
 ---
 
 ## Findings
 
-### Finding: F-001
+### Finding: F-001 (Round 1) — RESOLVED
 
-**Severity:** Critical
-**Category:** compliance
+Config schema conflict between `project-state/spec.md` and `workflow-engine/spec.md`. Both specs now agree on the four required `.goulart/config.yaml` fields.
 
-**Description:**
-`project-state/spec.md` defines `.goulart/config.yaml` as containing three required fields: `schema`, `agent`, and `adapterVersion`. However, `workflow-engine/spec.md` adds a `workflowEngine` field to the same config file. `project-state/spec.md` does not mention `workflowEngine`, creating a schema conflict. Two specs disagree on the shape of the same configuration file.
+### Finding: F-002 (Round 1) — RESOLVED
 
-**Evidence/Context:**
-- `project-state/spec.md` Scenario "Valid config structure": "it contains at minimum: `schema`, `agent`, and `adapterVersion` fields"
-- `workflow-engine/spec.md` Scenario "Engine field present": "it contains a `workflowEngine` field identifying the active engine"
+`inquirer` reference removed from `design.md` CLI framework decision.
 
----
+### Finding: F-003 (Round 1) — RESOLVED
 
-### Finding: F-002
+WorkflowEngine interface methods fully enumerated in both `design.md` and `workflow-engine/spec.md`.
 
-**Severity:** Moderate
-**Category:** quality
+### Finding: F-004 (Round 1) — RESOLVED
 
-**Description:**
-`design.md` CLI framework decision states: "supports subcommands and interactive prompts via `inquirer`/`prompts`". The actual decision is the `prompts` library. The `inquirer` reference is misleading — it implies inquirer is a co-equal alternative or dependency, but the prompts decision section explicitly rejects inquirer ("Heavier, has optional native deps").
+`proposal.md` now says "Existing Getting Started documentation updated" — scope ambiguity eliminated.
 
-**Evidence/Context:**
-- `design.md` line 41: "supports subcommands and interactive prompts via `inquirer`/`prompts`"
-- `design.md` line 55: "inquirer: Heavier, has optional native deps." (listed as rejected alternative)
+### Finding: F-005 (Round 1) — RESOLVED
 
----
+`coding-agent-selection/spec.md` now clarifies placeholder vs functional agents and adds an error scenario for unimplemented agent selection.
 
-### Finding: F-003
+### Finding: F-006 (Round 1) — RESOLVED
 
-**Severity:** Critical
-**Category:** quality
+`cli-contract/spec.md` now explicitly documents the package/binary name relationship.
 
-**Description:**
-`design.md` states the WorkflowEngine interface "stays small (5-6 methods) and focused on lifecycle operations." Neither `design.md` nor `workflow-engine/spec.md` enumerate what these methods are. The spec requires "methods for change lifecycle operations" without defining what those operations are. An implementer cannot build the interface without guessing the method signatures, which risks architecture drift between spec and implementation.
+### Finding: F-007 (Round 1) — RESOLVED
 
-**Evidence/Context:**
-- `design.md` line 74: "The interface stays small (5-6 methods) and focused on lifecycle operations."
-- `workflow-engine/spec.md` Scenario "Interface defined": "a `WorkflowEngine` type/interface is exported with methods for change lifecycle operations"
+`workflow-engine/spec.md` now enumerates all 6 lifecycle methods with descriptions.
 
----
+### Finding: F-008 (Round 1) — RESOLVED
 
-### Finding: F-004
+`product-documentation/spec.md` now includes a "Workflow diagram" scenario specifying ASCII diagram or Mermaid format.
 
-**Severity:** Moderate
-**Category:** scope
+### Finding: F-009 (Round 1) — RESOLVED
 
-**Description:**
-`product-documentation/spec.md` requires a Getting Started guide: "The Getting Started guide SHALL allow a user to initialize Goulart in a repository other than `goulart-sdd`." The proposal says "Update Getting Started" (existing doc) and separately mentions "New `docs/getting-started.md` or equivalent." The scope is ambiguous — is this an update to an existing file or a new file? The design does not address documentation structure.
+`safe-initialization/spec.md` now includes a "Config schema evolution is acknowledged" requirement with explicit behavior for incompatible configs.
 
-**Evidence/Context:**
-- `proposal.md` line 16: "Update Getting Started so a new user can initialize Goulart in another repository."
-- `proposal.md` line 44: "New `docs/getting-started.md` or equivalent for initialization guide."
-- `product-documentation/spec.md` Requirement "Getting Started works for external repositories"
+### Finding: F-010 (Round 1) — RESOLVED
 
----
+`cli-contract/spec.md` now states "For v0.2, only `init` is implemented" and the help output scenario specifies `init`.
 
-### Finding: F-005
-
-**Severity:** Moderate
-**Category:** compliance
-
-**Description:**
-`coding-agent-selection/spec.md` says agents beyond OpenCode should be "marked as experimental" in the selection list. `design.md` non-goals explicitly state: "Implement Claude Code, Codex, Cursor, or Generic adapters." These are contradictory — the spec wants to list unimplemented agents as selectable options, while the design says not to implement them. The spec should clarify these are display-only placeholders, not functional agents.
-
-**Evidence/Context:**
-- `coding-agent-selection/spec.md` Scenario "Supported agents listed": "the CLI displays OpenCode as a supported option and any future agents marked as experimental"
-- `design.md` line 20: "Implement Claude Code, Codex, Cursor, or Generic adapters." (non-goal)
-
----
-
-### Finding: F-006
+### New Finding: F-011
 
 **Severity:** Suggestion
+
 **Category:** quality
 
 **Description:**
-`cli-contract/spec.md` says "The CLI SHALL expose a `goulart` command (or `goulart-sdd` alias)." The proposal uses `goulart-sdd` as the npm package name. The relationship between the npm package name (`goulart-sdd`) and the CLI binary name (`goulart`) is not explicitly documented in any spec or design artifact.
+`workflow-engine/spec.md` describes the interface methods as "change lifecycle operations" (requirement text) while `design.md` explicitly states these are "backend primitives" and rejects "methodology-stage methods (plan/review/apply/verify/archive)" as the backend's responsibility. The design's framing is precise — the backend provides operations, core sequences them. The spec's "lifecycle operations" language could mislead an implementer into believing the backend owns methodology sequencing. This is a terminology alignment issue, not a functional contradiction.
 
 **Evidence/Context:**
-- `cli-contract/spec.md` Requirement "CLI exposes goulart command"
-- `proposal.md` line 7: "Introduce a `goulart-sdd` / `goulart` CLI published to npm"
-
----
-
-### Finding: F-007
-
-**Severity:** Suggestion
-**Category:** quality
-
-**Description:**
-`workflow-engine/spec.md` requires "methods for change lifecycle operations" but does not enumerate what those operations are. This overlaps with F-003 but is a spec-level completeness issue — the spec itself should list the lifecycle operations it covers (plan, review, apply, verify, archive) rather than leaving them implicit.
-
-**Evidence/Context:**
-- `workflow-engine/spec.md` Scenario "Interface defined": "methods for change lifecycle operations"
-
----
-
-### Finding: F-008
-
-**Severity:** Suggestion
-**Category:** quality
-
-**Description:**
-`product-documentation/spec.md` requires a "workflow" section in the README (Scenario "README sections present"), implying a workflow diagram. `design.md` does not specify what the workflow diagram should contain or how it should be produced (ASCII art, Mermaid, image, etc.).
-
-**Evidence/Context:**
-- `product-documentation/spec.md` Scenario "README sections present": "it contains: overview, quick start, installation, workflow, command reference..."
-
----
-
-### Finding: F-009
-
-**Severity:** Suggestion
-**Category:** feasibility
-
-**Description:**
-`safe-initialization/spec.md` requires re-init to preserve user-modified config files. If `.goulart/config.yaml` schema changes between package versions (e.g., new required field added), old config files may become invalid. No version migration strategy is defined. This is acceptable for v0.2 given the early stage, but should be acknowledged.
-
-**Evidence/Context:**
-- `safe-initialization/spec.md` Scenario "Modified config preserved": "re-init prompts the user before overwriting and shows the diff"
-
----
-
-### Finding: F-010
-
-**Severity:** Suggestion
-**Category:** quality
-
-**Description:**
-`cli-contract/spec.md` says the CLI "accepts subcommands" (plural) but only `init` is specified for v0.2. The help output scenario says it "prints available subcommands" but only one exists. This is not a blocking issue but creates a slightly misleading impression of scope.
-
-**Evidence/Context:**
-- `cli-contract/spec.md` Requirement "CLI exposes goulart command": "accepts subcommands"
-- `cli-contract/spec.md` Scenario "Help output": "prints available subcommands"
+- `workflow-engine/spec.md` line 8: "abstracts workflow-backend operations" + line 12: "methods for change lifecycle operations"
+- `design.md` line 72: "providing backend operations that Goulart core orchestrates into methodology stages" + line 100: "Methodology-stage methods (plan/review/apply/verify/archive): Rejected because methodology sequencing is Goulart core's responsibility"
 
 ---
 
@@ -207,86 +150,42 @@ N/A — first round
 
 | ID | Severity | Category | Status |
 |---|---|---|---|
-| F-001 | Critical | compliance | Open |
-| F-002 | Moderate | quality | Open |
-| F-003 | Critical | quality | Open |
-| F-004 | Moderate | scope | Open |
-| F-005 | Moderate | compliance | Open |
-| F-006 | Suggestion | quality | Open |
-| F-007 | Suggestion | quality | Open |
-| F-008 | Suggestion | quality | Open |
-| F-009 | Suggestion | feasibility | Open |
-| F-010 | Suggestion | quality | Open |
+| F-001 | Critical | compliance | Resolved (RC-001) |
+| F-002 | Moderate | quality | Resolved (RC-002) |
+| F-003 | Critical | quality | Resolved (RC-003) |
+| F-004 | Moderate | scope | Resolved |
+| F-005 | Moderate | compliance | Resolved |
+| F-006 | Suggestion | quality | Resolved |
+| F-007 | Suggestion | quality | Resolved |
+| F-008 | Suggestion | quality | Resolved |
+| F-009 | Suggestion | feasibility | Resolved |
+| F-010 | Suggestion | quality | Resolved |
+| F-011 | Suggestion | quality | Open |
 
 ---
 
 ## Verdict
 
-**APPROVE_WITH_CHANGES**
+**APPROVE**
 
 ---
 
 ## Required Changes
 
-### Change: RC-001
-
-**Requested Change:**
-Reconcile `project-state/spec.md` and `workflow-engine/spec.md` on `.goulart/config.yaml` fields. `project-state/spec.md` must include `workflowEngine` in its required fields list (or both specs must agree on a single canonical field list).
-
-**Applied:** No
-
-**Materiality:** MATERIAL
-
-**Materiality Rationale:**
-Affects the configuration schema — a core data contract. Two specs currently disagree on the shape of the same file, which would cause implementation ambiguity.
-
----
-
-### Change: RC-002
-
-**Requested Change:**
-Remove the `inquirer` reference from `design.md` CLI framework decision. The line "supports subcommands and interactive prompts via `inquirer`/`prompts`" should read "supports subcommands and interactive prompts via `prompts`" to be consistent with the prompts decision section that rejects inquirer.
-
-**Applied:** No
-
-**Materiality:** NON_MATERIAL
-
-**Materiality Rationale:**
-Editorial correction only. The actual decision already correctly specifies `prompts`. The `inquirer` reference is a leftover that does not change requirements, scope, or architecture.
-
----
-
-### Change: RC-003
-
-**Requested Change:**
-Enumerate the WorkflowEngine interface methods in `design.md` (and optionally in `workflow-engine/spec.md`). List the specific lifecycle operations the interface covers (e.g., `plan`, `review`, `apply`, `verify`, `archive`) so the interface contract is unambiguous for implementers.
-
-**Applied:** No
-
-**Materiality:** MATERIAL
-
-**Materiality Rationale:**
-Affects architecture clarity. The design claims "5-6 methods" without naming them, and the spec requires "methods for change lifecycle operations" without enumeration. An implementer would have to guess the interface, risking architecture drift.
-
----
-
-**Required Changes Summary:**
-
-| ID | Applied | Materiality |
-|---|---|---|
-| RC-001 | No | MATERIAL |
-| RC-002 | No | NON_MATERIAL |
-| RC-003 | No | MATERIAL |
+None. All Round 1 Required Changes have been applied and verified. F-011 is a Suggestion-level finding with `Requires Implementation Change: No` — it does not block progression. A minor editorial clarification in `workflow-engine/spec.md` to align terminology with `design.md` would be welcome but is not required.
 
 ---
 
 ## Human Decision
 
-**STATUS:** REVISE
+**STATUS:** ACCEPTED
 
 **Human Reason:**
 
-Apply RC-001, RC-002, and RC-003 in a fresh Author/planning session. RC-001 and RC-003 are MATERIAL and require re-review after correction. RC-002 is NON_MATERIAL but should also be corrected in the same revision. Do not modify proposal.md, specs, design.md, test-plan, or tasks in this reviewer session.
+The independent Round 2 review returned APPROVE with no Required Changes.
+All Round 1 material and non-material Required Changes were verified resolved.
+F-011 is a non-blocking terminology suggestion and does not require another
+planning revision before implementation.
 
 ---
 
@@ -296,7 +195,15 @@ Apply RC-001, RC-002, and RC-003 in a fresh Author/planning session. RC-001 and 
 
 | Input Path | Change Description |
 |---|---|
-| | |
+| `openspec/changes/v0-2-cli-installer/proposal.md` | Getting Started scope clarified: existing doc updated, not new file |
+| `openspec/changes/v0-2-cli-installer/design.md` | `inquirer` removed; WorkflowEngine interface fully enumerated with 6 methods and TypeScript signatures |
+| `openspec/changes/v0-2-cli-installer/specs/cli-contract/spec.md` | Package/binary name relationship documented; v0.2 scope limited to `init` |
+| `openspec/changes/v0-2-cli-installer/specs/coding-agent-selection/spec.md` | Placeholder vs functional agent clarified; error scenario for unimplemented agents added |
+| `openspec/changes/v0-2-cli-installer/specs/installation-tests/spec.md` | `workflowEngine` added to config validation fields |
+| `openspec/changes/v0-2-cli-installer/specs/product-documentation/spec.md` | Workflow diagram format scenario added (ASCII/Mermaid) |
+| `openspec/changes/v0-2-cli-installer/specs/project-state/spec.md` | `workflowEngine` added to required `.goulart/config.yaml` fields |
+| `openspec/changes/v0-2-cli-installer/specs/safe-initialization/spec.md` | Config schema evolution requirement added |
+| `openspec/changes/v0-2-cli-installer/specs/workflow-engine/spec.md` | All 6 interface methods enumerated with descriptions |
 
 **Re-review Waived:** No
 
