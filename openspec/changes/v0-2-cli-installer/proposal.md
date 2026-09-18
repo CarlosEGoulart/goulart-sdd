@@ -41,6 +41,6 @@ Goulart SDD v0.1 established the methodology on top of OpenSpec and validated th
 - New `packages/opencode-adapter/` (or equivalent) for OpenCode-specific adapter code.
 - npm package publishing: `goulart-sdd` becomes an installable package.
 - Root README rewritten from 2-line placeholder to full product documentation.
-- New `docs/getting-started.md` or equivalent for initialization guide.
+- Existing Getting Started documentation updated with initialization guide for external repositories.
 - No production source code, APIs, or external dependencies are affected beyond the new packages.
 - OpenSpec remains a dependency but is isolated behind the engine boundary.

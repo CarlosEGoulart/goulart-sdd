@@ -5,11 +5,15 @@ Handles interactive coding-agent selection and auto-detection during initializat
 ## ADDED Requirements
 
 ### Requirement: Agent selection presents supported options
-The initializer SHALL present a list of supported coding agents for the user to choose from.
+The initializer SHALL present a list of coding agents for the user to choose from. Only agents with installed adapters are functional; others are display-only placeholders for future support.
 
 #### Scenario: Supported agents listed
 - **WHEN** the user reaches the agent selection step
-- **THEN** the CLI displays OpenCode as a supported option and any future agents marked as experimental
+- **THEN** the CLI displays OpenCode as the functional option and any future agents as unimplemented placeholders marked experimental
+
+#### Scenario: Unimplemented agent selected
+- **WHEN** the user selects an agent without an installed adapter
+- **THEN** the CLI prints an error explaining that the agent is not yet supported and exits with code 1
 
 ### Requirement: Auto-detect existing agent configuration
 The initializer SHALL detect if the target repository already has a coding agent configured.

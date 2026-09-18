@@ -28,3 +28,10 @@ The initializer SHALL produce identical output when run twice without user chang
 #### Scenario: Clean re-init
 - **WHEN** a user runs `goulart init` twice without modifying any files
 - **THEN** the second run completes without prompts and the repository state is identical
+
+### Requirement: Config schema evolution is acknowledged
+The v0.2 initializer SHALL NOT implement version migration for `.goulart/config.yaml`. If the config schema changes in a future package version, an incompatible config file will cause re-init to prompt the user.
+
+#### Scenario: Incompatible config triggers re-init prompt
+- **WHEN** `.goulart/config.yaml` is missing fields required by the current package version
+- **THEN** re-init detects the incompatibility and prompts the user before overwriting

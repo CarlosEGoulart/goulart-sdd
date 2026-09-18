@@ -5,7 +5,7 @@ Defines the public CLI interface for Goulart SDD — command names, flags, outpu
 ## ADDED Requirements
 
 ### Requirement: CLI package is installable via npm
-The `goulart-sdd` package SHALL be installable via `npm install -g goulart-sdd` or `npx goulart-sdd`.
+The `goulart-sdd` npm package SHALL be installable via `npm install -g goulart-sdd` or `npx goulart-sdd`. The npm package name is `goulart-sdd`; the CLI binary it provides is `goulart`.
 
 #### Scenario: Global install
 - **WHEN** a user runs `npm install -g goulart-sdd`
@@ -16,11 +16,11 @@ The `goulart-sdd` package SHALL be installable via `npm install -g goulart-sdd` 
 - **THEN** the init command executes without requiring a global install
 
 ### Requirement: CLI exposes goulart command
-The CLI SHALL expose a `goulart` command (or `goulart-sdd` alias) that accepts subcommands.
+The CLI SHALL expose a `goulart` command (or `goulart-sdd` alias) that accepts subcommands. For v0.2, only `init` is implemented.
 
 #### Scenario: Help output
 - **WHEN** a user runs `goulart --help`
-- **THEN** the CLI prints available subcommands and a brief description of each
+- **THEN** the CLI prints available subcommands (`init`) and a brief description of each
 
 #### Scenario: Version output
 - **WHEN** a user runs `goulart --version`

@@ -16,11 +16,11 @@ Goulart SDD SHALL use `.goulart/` as its project-owned configuration directory.
 - **THEN** no `.goulart/` directory is created if it does not already exist
 
 ### Requirement: Configuration file format
-The `.goulart/config.yaml` file SHALL contain the schema reference, selected agent, and adapter version.
+The `.goulart/config.yaml` file SHALL contain the schema reference, selected agent, adapter version, and workflow engine identifier.
 
 #### Scenario: Valid config structure
 - **WHEN** `.goulart/config.yaml` is read
-- **THEN** it contains at minimum: `schema`, `agent`, and `adapterVersion` fields
+- **THEN** it contains at minimum: `schema`, `agent`, `adapterVersion`, and `workflowEngine` fields
 
 ### Requirement: Configuration is human-readable
 The `.goulart/config.yaml` file SHALL be plain YAML that a developer can read and edit by hand.

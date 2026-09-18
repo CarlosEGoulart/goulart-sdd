@@ -9,7 +9,13 @@ The Goulart core SHALL define a `WorkflowEngine` interface that abstracts workfl
 
 #### Scenario: Interface defined
 - **WHEN** the core package is imported
-- **THEN** a `WorkflowEngine` type/interface is exported with methods for change lifecycle operations
+- **THEN** a `WorkflowEngine` type/interface is exported with the following methods:
+  - `createChange(name, schemaName)` — scaffold a new change from a schema
+  - `listChanges()` — return all changes with structural status
+  - `getStatus(changeName)` — return artifact dependency graph and completion state
+  - `getInstructions(changeName, artifactId)` — return enriched instructions for artifact generation
+  - `validateArtifact(changeName, artifactId)` — validate artifact structure and dependency graph
+  - `archiveChange(changeName)` — archive a completed change and sync delta specs
 
 ### Requirement: Core does not call OpenSpec directly
 Once the engine boundary exists, Goulart core, CLI, and agent adapters SHALL NOT invoke `openspec` commands directly.

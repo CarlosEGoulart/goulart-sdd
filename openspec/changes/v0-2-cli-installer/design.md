@@ -38,7 +38,7 @@ The v0.2 design must transform this into an installable tool while preserving th
 
 **Decision:** Use `commander.js` for CLI argument parsing.
 
-**Rationale:** Lightweight, well-maintained, zero-config, supports subcommands and interactive prompts via `inquirer`/`prompts`. No build step needed for the CLI layer itself.
+**Rationale:** Lightweight, well-maintained, zero-config, supports subcommands and interactive prompts via `prompts`. No build step needed for the CLI layer itself.
 
 **Alternatives considered:**
 - yargs: Slightly heavier, more features than needed for v0.2.
@@ -69,14 +69,35 @@ The v0.2 design must transform this into an installable tool while preserving th
 
 ### Engine abstraction: strategy pattern
 
-**Decision:** Implement `WorkflowEngine` as a strategy/interface with method signatures matching the core lifecycle operations (plan, review, apply, verify, archive).
+**Decision:** Implement `WorkflowEngine` as a strategy/interface providing backend operations that Goulart core orchestrates into methodology stages.
 
-**Rationale:** Classic strategy pattern allows swapping backends without changing core logic. The interface stays small (5-6 methods) and focused on lifecycle operations.
+**Rationale:** Classic strategy pattern allows swapping backends without changing core logic. The interface exposes backend primitives (change lifecycle, artifact storage, schema operations) that Goulart core sequences into plan → review → apply → verify → archive. This keeps methodology sequencing in Goulart core while backend operations remain swappable.
+
+**Interface methods (6):**
+
+```typescript
+interface WorkflowEngine {
+  createChange(name: string, schemaName: string): Promise<ChangeHandle>;
+  listChanges(): Promise<ChangeSummary[]>;
+  getStatus(changeName: string): Promise<ChangeStatus>;
+  getInstructions(changeName: string, artifactId: string): Promise<ArtifactInstructions>;
+  validateArtifact(changeName: string, artifactId: string): Promise<ValidationResult>;
+  archiveChange(changeName: string): Promise<void>;
+}
+```
+
+- `createChange`: Scaffolds a new change from a schema and returns a handle.
+- `listChanges`: Returns all changes with structural status.
+- `getStatus`: Returns artifact dependency graph and completion state for a change.
+- `getInstructions`: Returns enriched instructions (template, context, rules) for generating a specific artifact.
+- `validateArtifact`: Validates an artifact's structure and dependency graph.
+- `archiveChange`: Archives a completed change and syncs delta specs to main specs.
 
 **Alternatives considered:**
 - Plugin system: Over-engineered for v0.2 when there's only one backend.
 - Event-driven: Adds complexity without clear benefit at this scale.
 - Direct function imports: Would defeat the purpose of the engine boundary.
+- Methodology-stage methods (plan/review/apply/verify/archive): Rejected because methodology sequencing is Goulart core's responsibility, not the backend's.
 
 ### Testing strategy: temporary repository E2E
 

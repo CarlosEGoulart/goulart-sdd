@@ -23,7 +23,7 @@ The installed `.goulart/config.yaml` SHALL parse as valid YAML with required fie
 
 #### Scenario: Config validation
 - **WHEN** init completes in a temp repo
-- **THEN** `.goulart/config.yaml` contains `schema`, `agent`, and `adapterVersion` fields with non-empty values
+- **THEN** `.goulart/config.yaml` contains `schema`, `agent`, `adapterVersion`, and `workflowEngine` fields with non-empty values
 
 ### Requirement: Adapter files match package source
 Installed adapter files SHALL match the files from the current package version.

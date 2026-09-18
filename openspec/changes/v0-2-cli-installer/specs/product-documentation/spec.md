@@ -11,6 +11,10 @@ The root README.md SHALL function as the project's primary entry point with inst
 - **WHEN** a developer opens the README
 - **THEN** it contains: overview, quick start, installation, workflow, command reference, core principles, supported agents, generated project layout, architecture, OpenSpec relationship, and roadmap sections
 
+#### Scenario: Workflow diagram
+- **WHEN** a developer reaches the workflow section
+- **THEN** it presents the Goulart lifecycle (plan → review → apply → verify → archive) in a readable format (ASCII diagram or Mermaid, chosen at implementation time)
+
 #### Scenario: Quick start works
 - **WHEN** a developer follows the Quick Start section
 - **THEN** they can initialize Goulart SDD in a new repository within 5 minutes
