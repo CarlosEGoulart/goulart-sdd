@@ -103,7 +103,7 @@ Plan-review evaluates proposal/spec/design consistency, compliance, quality, fea
 | Disposition | Effect |
 |---|---|
 | ACCEPTED | Permits downstream planning, provided the review is current and all required changes are applied. |
-| REVISE | Artifacts revised and re-reviewed. |
+| REVISE | Human requests revision. Human Reason is mandatory. Planning artifacts must then be revised and re-reviewed before normal progression. |
 | OVERRIDDEN | Explicit exception with mandatory reason. Does not make a stale review fresh. |
 
 The reviewer verdict alone does not always authorize continuation. An explicit human disposition is mandatory.
@@ -113,7 +113,7 @@ Key combinations:
 - APPROVE_WITH_CHANGES + unapplied Required Changes → BLOCKED.
 - APPROVE_WITH_CHANGES + material corrections applied → re-review normally required, or explicit OVERRIDDEN with mandatory reason.
 - APPROVE_WITH_CHANGES + demonstrably non-material corrections → human may record ACCEPTED with materiality rationale without re-review.
-- REVISE or human REVISE → normally revise and re-review.
+- REVISE or human REVISE → human requests revision with mandatory reason; revise and re-review normally required.
 
 ### Second invocation — planning continuation
 
@@ -216,15 +216,19 @@ Where findings exist, human per-finding triage uses:
 
 | Triage | Effect |
 |---|---|
-| ACCEPT | Finding addressed. Justification optional. |
-| REJECT | Finding rejected. Justification required. |
-| DEFER | Finding deferred. Justification required. |
+| ACCEPT | Finding accepted. Justification optional. If an implementation change is required, that change must still be addressed before verify. ACCEPT alone does not resolve a blocking condition. |
+| REJECT | Finding rejected. Justification mandatory. Does not automatically waive a blocking condition or a Critical finding. |
+| DEFER | Finding deferred. Justification mandatory. Does not automatically waive a blocking condition or a Critical finding. |
+
+Triage is not an override. REJECT and DEFER do not constitute explicit human overrides. Normal progression remains blocked while an unresolved blocking or Critical condition exists unless an actual permitted explicit human override covers that exact condition.
 
 A clean review with zero findings does not require artificial finding triage; the verdict stands as-is.
 
 REJECT or DEFER without justification is invalid triage. All mandatory triage must be complete before normal progression.
 
 Material fixes after code review make that review stale and normally require re-review. Non-material corrections may avoid re-review only with the required explicit rationale and evidence.
+
+**Code-review override semantics:** A human may explicitly waive a permitted code-review condition only with real recorded evidence including: Override Invoked: Yes, the exact Waived Condition, a mandatory Override Reason, and affected reviewed state or inputs where required. The override is human-owned, must cover the exact condition, and is not inferred from ACCEPT, REJECT, or DEFER. An override does not change VERDICT: REVISE into APPROVE, does not make a stale review fresh, does not claim changed implementation was reviewed, does not establish independence, and does not replace code-review existence, task completion, mandatory finding triage, evaluable test-plan entries, or degraded-review acknowledgement.
 
 ## Review Independence and Degraded Mode
 
@@ -276,6 +280,7 @@ Before producing a final DECISION, `goulart-verify` independently checks prerequ
 - every required test-plan entry has a final evaluable state (completed AUTOMATED or MECHANICAL check with recorded result, or documented SEMANTIC evaluation)
 - degraded-review disclosure and human acknowledgement are satisfied where applicable
 - review freshness for both plan-review and code-review lineages is assessed, with any explicitly permitted override recorded
+- bounded review-round state is respected: if plan-review or code-review is at Round 2 and the current state requires another review, the relevant verification prerequisite is BLOCKED; record round-limit or escalation evidence; do not create Round 3; continue collecting independent prerequisite evidence; persist and report prerequisite gaps; STOP before audit; emit no final DECISION
 
 All-task completion is non-waivable. A review override does not automatically waive these separate prerequisites. If any prerequisite is not satisfied: verification audit does not run; the blocking prerequisite and gap are recorded; STOP. Do not emit DECISION: FAIL.
 
@@ -286,7 +291,7 @@ After prerequisites permit verification, the audit checks:
 - required spec scenarios against implementation
 - AUTOMATED, MECHANICAL, and SEMANTIC validation evidence
 - behavioral coverage integrity
-- full test suite results
+- applicable complete test suite: if a meaningful applicable complete test-suite command exists, execute it during verification (an old run, old CI result, or code-review assertion alone is not a substitute); if the applicable suite fails or cannot be executed, record a blocking audit finding and final verification is FAIL; if no meaningful applicable complete-suite command exists, record that explicitly with rationale; absence of a nonexistent suite alone is not a failure and does not force FAIL
 - scope drift
 - review and evidence consistency
 
