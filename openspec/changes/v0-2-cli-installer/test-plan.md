@@ -30,11 +30,11 @@
 | TP-024 | specs/opencode-adapter/spec.md | OpenCode adapter files are installed | Skills installed | AUTOMATED | packages/opencode-adapter/test/install.test.ts | skillsInstalledToOpencodeDir | NOT_STARTED |
 | TP-025 | specs/opencode-adapter/spec.md | Adapter files are versioned | Version recorded | AUTOMATED | packages/opencode-adapter/test/install.test.ts | adapterVersionRecordedInConfig | NOT_STARTED |
 | TP-026 | specs/opencode-adapter/spec.md | Existing adapter files are handled safely | Modified file detected | AUTOMATED | packages/opencode-adapter/test/install.test.ts | modifiedFileDetectedPromptsUser | NOT_STARTED |
-| TP-027 | specs/openspec-engine/spec.md | OpenSpecEngine implements WorkflowEngine | Engine instantiation | AUTOMATED | packages/core/test/engine.test.ts | openSpecEngineInstantiatesFromConfig | NOT_STARTED |
-| TP-028 | specs/openspec-engine/spec.md | OpenSpecEngine delegates to OpenSpec CLI | Plan delegation | AUTOMATED | packages/core/test/engine.test.ts | openSpecEngineDelegatesToCli | NOT_STARTED |
-| TP-029 | specs/openspec-engine/spec.md | OpenSpecEngine delegates to OpenSpec CLI | OpenSpec not installed | AUTOMATED | packages/core/test/engine.test.ts | openSpecNotInstalledReturnsError | NOT_STARTED |
-| TP-030 | specs/openspec-engine/spec.md | OpenSpec-specific paths are isolated | Path isolation | MECHANICAL | grep -r "openspec" packages/core/src/ | noDirectOpenspecReferencesInCore | NOT_STARTED |
-| TP-031 | specs/product-documentation/spec.md | README serves as product landing page | README sections present | MECHANICAL | grep -c "^##" README.md | readmeContainsRequiredSections | NOT_STARTED |
+| TP-027 | specs/openspec-engine/spec.md | OpenSpecEngine implements WorkflowEngine | Engine instantiation | AUTOMATED | packages/openspec-engine/test/engine.test.ts | openSpecEngineInstantiatesFromConfig | NOT_STARTED |
+| TP-028 | specs/openspec-engine/spec.md | OpenSpecEngine delegates to OpenSpec CLI | Plan delegation | AUTOMATED | packages/openspec-engine/test/engine.test.ts | openSpecEngineDelegatesToCli | NOT_STARTED |
+| TP-029 | specs/openspec-engine/spec.md | OpenSpecEngine delegates to OpenSpec CLI | OpenSpec not installed | AUTOMATED | packages/openspec-engine/test/engine.test.ts | openSpecNotInstalledReturnsError | NOT_STARTED |
+| TP-030 | specs/openspec-engine/spec.md | OpenSpec-specific paths are isolated | Path isolation | AUTOMATED | packages/core/test/architecture.test.ts | noDirectOpenspecExecutionOutsideEngine | NOT_STARTED |
+| TP-031 | specs/product-documentation/spec.md | README serves as product landing page | README sections present | MECHANICAL | scripts/check-readme-headings.sh | verifyAllRequiredSections | NOT_STARTED |
 | TP-032 | specs/product-documentation/spec.md | README serves as product landing page | Workflow diagram | SEMANTIC | README.md | workflowDiagramReview | NOT_STARTED |
 | TP-033 | specs/product-documentation/spec.md | README serves as product landing page | Quick start works | SEMANTIC | README.md | quickStartEvaluation | NOT_STARTED |
 | TP-034 | specs/product-documentation/spec.md | Getting Started works for external repositories | External repo initialization | SEMANTIC | docs/getting-started.md | externalRepoInitEvaluation | NOT_STARTED |
@@ -49,7 +49,7 @@
 | TP-043 | specs/safe-initialization/spec.md | Init is idempotent for unmodified state | Clean re-init | AUTOMATED | packages/cli/test/safe-init.test.ts | cleanReInitIdempotent | NOT_STARTED |
 | TP-044 | specs/safe-initialization/spec.md | Config schema evolution is acknowledged | Incompatible config triggers re-init prompt | AUTOMATED | packages/cli/test/safe-init.test.ts | incompatibleConfigTriggersPrompt | NOT_STARTED |
 | TP-045 | specs/workflow-engine/spec.md | WorkflowEngine interface exists | Interface defined | AUTOMATED | packages/core/test/workflow-engine.test.ts | interfaceExportsAllMethods | NOT_STARTED |
-| TP-046 | specs/workflow-engine/spec.md | Core does not call OpenSpec directly | No direct openspec calls in core | MECHANICAL | grep -r "openspec" packages/core/src/ | noDirectOpenspecInvocations | NOT_STARTED |
+| TP-046 | specs/workflow-engine/spec.md | Core does not call OpenSpec directly | No direct openspec calls in core | AUTOMATED | packages/core/test/architecture.test.ts | noOpenspecImportsInCoreCliAdapter | NOT_STARTED |
 | TP-047 | specs/workflow-engine/spec.md | Core does not call OpenSpec directly | Engine delegation | AUTOMATED | packages/core/test/workflow-engine.test.ts | operationsDelegatedToEngine | NOT_STARTED |
 | TP-048 | specs/workflow-engine/spec.md | Engine is configurable | Engine field present | AUTOMATED | packages/core/test/workflow-engine.test.ts | engineFieldReadFromConfig | NOT_STARTED |
 | TP-049 | specs/workflow-engine/spec.md | Engine is configurable | Default engine | AUTOMATED | packages/core/test/workflow-engine.test.ts | defaultEngineIsOpenspec | NOT_STARTED |
@@ -57,7 +57,7 @@
 ## Validation Types
 
 - **AUTOMATED**: Scenario verified by an automated test (unit, integration, E2E). Test file path and test function name recorded.
-- **MECHANICAL**: Scenario verified by a deterministic command or tool (grep, lint, schema validation). Command recorded.
+- **MECHANICAL**: Scenario verified by a deterministic command or tool (lint, schema validation, build, script). Command or script path recorded.
 - **SEMANTIC**: Scenario cannot reasonably be validated automatically. Rationale, evaluator, and evaluation description recorded.
 
 ## Semantic Entry Detail
@@ -80,4 +80,7 @@ Unmapped Scenarios: 0
 
 | Entry | Change | Coverage Impact | Spec Amendment | Rationale |
 |---|---|---|---|---|
-| (none) | Initial test plan generation | N/A | N/A | First generation; no coverage changes |
+| TP-027, TP-028, TP-029 | Test paths moved from packages/core/test/ to packages/openspec-engine/test/ | None — same scenarios, corrected package location | None | OpenSpecEngine implementation belongs in packages/openspec-engine per architecture boundary |
+| TP-030 | Changed from MECHANICAL grep to AUTOMATED architecture-boundary test | None — same scenario, corrected validation approach | None | Raw grep catches false positives from config values; architecture test checks actual execution coupling |
+| TP-031 | Changed from grep count to MECHANICAL script checking each required heading | None — same scenario, corrected validation approach | None | Heading count does not prove required sections exist; script verifies each individually |
+| TP-046 | Changed from MECHANICAL grep to AUTOMATED architecture-boundary test | None — same scenario, corrected validation approach | None | Same rationale as TP-030; each entry validates its own distinct scenario |
